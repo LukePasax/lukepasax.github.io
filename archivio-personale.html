@@ -205,7 +205,7 @@
 <div class="card">
   <div class="header">
     <h1>Archivio Personale</h1>
-    <p>Analisi · Classificazione · Google Drive · <span style="color:#444">v6</span></p>
+    <p>Analisi · Classificazione · Google Drive · <span style="color:#444">v8</span></p>
   </div>
   <div class="body">
 
@@ -426,6 +426,24 @@ function getAccessToken() {
   });
 }
 
+async function getOrCreateYearFolder(token, parentId, year) {
+  const query = `mimeType='application/vnd.google-apps.folder' and name='${year}' and '${parentId}' in parents and trashed=false`;
+  const search = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id)`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const data = await search.json();
+  if (data.files && data.files.length > 0) return data.files[0].id;
+
+  const create = await fetch("https://www.googleapis.com/drive/v3/files?fields=id", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ name: String(year), mimeType: "application/vnd.google-apps.folder", parents: [parentId] }),
+  });
+  const folder = await create.json();
+  return folder.id;
+}
+
 async function uploadToDrive(token, fileName, mimeType, base64Data, folderId) {
   const metadata = { name: fileName, parents: [folderId] };
   const boundary = "archivio_boundary";
@@ -608,11 +626,14 @@ document.getElementById("btnConfirm").addEventListener("click", async function()
   try {
     const categoria = document.getElementById("reviewCat").value;
     const fileName = document.getElementById("reviewName").value.trim();
-    const folderId = FOLDERS[categoria] || FOLDERS["Altro"];
+    const categoryFolderId = FOLDERS[categoria] || FOLDERS["Altro"];
     const { base64, mimeType } = pendingUpload;
 
+    const year = (fileName.match(/^(\d{4})[-_]/) || [])[1] || String(new Date().getFullYear());
+
     if (!accessToken) accessToken = await getAccessToken();
-    const driveFile = await uploadToDrive(accessToken, fileName, mimeType, base64, folderId);
+    const yearFolderId = await getOrCreateYearFolder(accessToken, categoryFolderId, year);
+    const driveFile = await uploadToDrive(accessToken, fileName, mimeType, base64, yearFolderId);
 
     document.getElementById("rCat").textContent = "📁 " + categoria;
     document.getElementById("rFile").textContent = fileName;
