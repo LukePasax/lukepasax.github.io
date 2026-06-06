@@ -157,6 +157,77 @@
 
     #steps, #result, #error, #actionBtns { display: none; }
 
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #2a2a2a;
+      margin: 0 -28px 20px;
+      padding: 0 28px;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: #555;
+      padding: 10px 0;
+      margin-right: 20px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .tab-btn.active { color: #c8b89a; border-bottom-color: #c8b89a; }
+
+    .reclass-filters { margin-bottom: 14px; }
+    .reclass-filter-row {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+    .reclass-filter-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .reclass-filter-row input[type=radio] { accent-color: #c8b89a; }
+    .reclass-input {
+      width: 100%;
+      background: #0e0e0e;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 9px 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: #c8b89a;
+      outline: none;
+      margin-bottom: 10px;
+    }
+
+    .reclass-progress { font-size: 12px; color: #888; margin: 16px 0 4px; }
+    .reclass-progress-bar {
+      height: 3px;
+      background: #222;
+      border-radius: 2px;
+      margin-bottom: 16px;
+    }
+    .reclass-progress-fill { height: 100%; background: #c8b89a; border-radius: 2px; transition: width .3s; }
+
+    .file-item {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 8px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .file-item input[type=checkbox] { accent-color: #c8b89a; margin-top: 2px; flex-shrink: 0; }
+    .file-item-info { font-size: 11px; flex: 1; min-width: 0; }
+    .file-item-old { color: #555; text-decoration: line-through; word-break: break-all; margin-bottom: 4px; }
+    .file-item-new { color: #c8b89a; word-break: break-all; }
+    .file-item-same { color: #4a7a4a; }
+    .file-item-err { color: #c87e7e; font-size: 10px; }
+
     .api-setup {
       background: #111;
       border: 1.5px dashed #333;
@@ -205,9 +276,15 @@
 <div class="card">
   <div class="header">
     <h1>Archivio Personale</h1>
-    <p>Analisi · Classificazione · Google Drive · <span style="color:#444">v8</span></p>
+    <p>Analisi · Classificazione · Google Drive · <span style="color:#444">v9</span></p>
   </div>
   <div class="body">
+
+    <!-- Tabs (shown only when key is configured) -->
+    <div class="tabs" id="tabs" style="display:none">
+      <button class="tab-btn active" id="tabArchivia" onclick="switchTab('archivia')">Archivia</button>
+      <button class="tab-btn" id="tabReclass" onclick="switchTab('reclass')">Riclassifica</button>
+    </div>
 
     <!-- API Key setup (shown only if not saved) -->
     <div class="api-setup" id="apiSetup">
@@ -286,6 +363,41 @@
       <button class="btn btn-ghost" id="btnReset">Cambia file</button>
     </div>
 
+    <!-- ── Reclassify panel ───────────────────────────────────────────────── -->
+    <div id="reclassPanel" style="display:none">
+
+      <div class="reclass-filters">
+        <div class="reclass-filter-row">
+          <label><input type="radio" name="rFilter" value="all" checked> Tutto</label>
+          <label><input type="radio" name="rFilter" value="cat"> Categoria</label>
+          <label><input type="radio" name="rFilter" value="year"> Anno</label>
+        </div>
+        <select id="rFilterCat" class="reclass-input" style="display:none"></select>
+        <input id="rFilterYear" type="text" class="reclass-input" placeholder="es. 2024" style="display:none" />
+      </div>
+
+      <button class="btn btn-primary" id="btnStartReclass" style="margin-top:0">Avvia analisi</button>
+
+      <div id="reclassProgress" style="display:none">
+        <div class="divider"></div>
+        <div class="reclass-progress" id="reclassProgressText">Analisi 0/0…</div>
+        <div class="reclass-progress-bar"><div class="reclass-progress-fill" id="reclassProgressFill" style="width:0%"></div></div>
+      </div>
+
+      <div id="reclassResults" style="display:none">
+        <div class="divider"></div>
+        <div id="reclassFileList"></div>
+        <button class="btn btn-primary" id="btnApplyReclass">Applica selezionati</button>
+        <button class="btn btn-ghost" id="btnReclassReset">Nuova analisi</button>
+      </div>
+
+      <div id="reclassError" style="display:none">
+        <div class="divider"></div>
+        <div class="error-box" id="reclassErrorMsg"></div>
+      </div>
+
+    </div>
+
   </div>
 </div>
 
@@ -297,7 +409,7 @@
 </script>
 <script>
 const CLIENT_ID = "587675640690-djilvb3nn1o446kctj6pvg9lu8drh1v2.apps.googleusercontent.com";
-const SCOPE = "https://www.googleapis.com/auth/drive.file";
+const SCOPE = "https://www.googleapis.com/auth/drive";
 
 const FOLDERS = {
   "Spese Sanitarie":           "1Qe67w_CBtnPd_Fr49_pk6zLXs2y0P9Tb",
@@ -328,11 +440,32 @@ function initKeyUI() {
   if (ANTHROPIC_KEY) {
     document.getElementById("apiSetup").style.display = "none";
     document.getElementById("apiKeyBar").style.display = "flex";
+    document.getElementById("tabs").style.display = "flex";
     document.getElementById("dropzone").style.display = "block";
   } else {
     document.getElementById("apiSetup").style.display = "block";
     document.getElementById("apiKeyBar").style.display = "none";
+    document.getElementById("tabs").style.display = "none";
     document.getElementById("dropzone").style.display = "none";
+  }
+}
+
+function switchTab(tab) {
+  const isArchivia = tab === "archivia";
+  document.getElementById("tabArchivia").className = "tab-btn" + (isArchivia ? " active" : "");
+  document.getElementById("tabReclass").className = "tab-btn" + (!isArchivia ? " active" : "");
+
+  // Archivia elements
+  ["dropzone","preview","steps","review","result","error","actionBtns"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
+  document.getElementById("reclassPanel").style.display = "none";
+
+  if (isArchivia) {
+    resetUI();
+  } else {
+    document.getElementById("reclassPanel").style.display = "block";
   }
 }
 
@@ -654,6 +787,234 @@ document.getElementById("btnConfirm").addEventListener("click", async function()
 document.getElementById("btnReset").addEventListener("click", resetUI);
 document.getElementById("btnReset2").addEventListener("click", resetUI);
 document.getElementById("btnNew").addEventListener("click", resetUI);
+
+// ── Reclassify helpers ────────────────────────────────────────────────────────
+
+async function driveGet(token, url) {
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  return res.json();
+}
+
+async function listDirectFiles(token, folderId) {
+  const q = `'${folderId}' in parents and mimeType!='application/vnd.google-apps.folder' and trashed=false`;
+  const data = await driveGet(token, `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType,parents)`);
+  return data.files || [];
+}
+
+async function listSubfolders(token, folderId) {
+  const q = `'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+  const data = await driveGet(token, `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`);
+  return data.files || [];
+}
+
+async function downloadBase64(token, fileId) {
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const blob = await res.blob();
+  return new Promise(resolve => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result.split(",")[1]);
+    r.readAsDataURL(blob);
+  });
+}
+
+async function claudeClassify(claudeContent) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": ANTHROPIC_KEY,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 300,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: claudeContent }],
+    }),
+  });
+  if (!res.ok) throw new Error("Claude API: " + res.status);
+  const data = await res.json();
+  const raw = data.content?.find(b => b.type === "text")?.text || "";
+  return JSON.parse(raw.replace(/```json|```/g, "").trim());
+}
+
+async function listArchivioFiles(token, filter) {
+  let categoriesToScan = Object.entries(FOLDERS);
+  if (filter.type === "cat") categoriesToScan = [[filter.cat, FOLDERS[filter.cat]]];
+
+  const files = [];
+  for (const [catName, catId] of categoriesToScan) {
+    const direct = await listDirectFiles(token, catId);
+    direct.forEach(f => files.push({ ...f, currentCat: catName, currentYear: null, parentId: catId }));
+
+    const yearFolders = await listSubfolders(token, catId);
+    for (const yf of yearFolders) {
+      if (filter.type === "year" && yf.name !== filter.year) continue;
+      const inYear = await listDirectFiles(token, yf.id);
+      inYear.forEach(f => files.push({ ...f, currentCat: catName, currentYear: yf.name, parentId: yf.id }));
+    }
+  }
+  return files;
+}
+
+// ── Reclassify UI ─────────────────────────────────────────────────────────────
+
+// Populate filter dropdowns
+const rFilterCat = document.getElementById("rFilterCat");
+Object.keys(FOLDERS).forEach(cat => {
+  const opt = document.createElement("option");
+  opt.value = cat; opt.textContent = cat;
+  rFilterCat.appendChild(opt);
+});
+
+document.querySelectorAll("input[name=rFilter]").forEach(radio => {
+  radio.addEventListener("change", function() {
+    document.getElementById("rFilterCat").style.display = this.value === "cat" ? "block" : "none";
+    document.getElementById("rFilterYear").style.display = this.value === "year" ? "block" : "none";
+  });
+});
+
+document.getElementById("btnStartReclass").addEventListener("click", async function() {
+  const filterType = document.querySelector("input[name=rFilter]:checked").value;
+  const filter = {
+    type: filterType,
+    cat: document.getElementById("rFilterCat").value,
+    year: document.getElementById("rFilterYear").value.trim(),
+  };
+
+  if (filter.type === "year" && !filter.year) { alert("Inserisci un anno."); return; }
+
+  this.disabled = true;
+  document.getElementById("reclassProgress").style.display = "block";
+  document.getElementById("reclassResults").style.display = "none";
+  document.getElementById("reclassError").style.display = "none";
+
+  try {
+    if (!accessToken) accessToken = await getAccessToken();
+    const files = await listArchivioFiles(accessToken, filter);
+
+    if (files.length === 0) {
+      document.getElementById("reclassProgressText").textContent = "Nessun file trovato.";
+      this.disabled = false;
+      return;
+    }
+
+    const results = [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      document.getElementById("reclassProgressText").textContent = `Analisi ${i + 1}/${files.length}: ${f.name}`;
+      document.getElementById("reclassProgressFill").style.width = `${Math.round((i / files.length) * 100)}%`;
+
+      try {
+        const b64 = await downloadBase64(accessToken, f.id);
+        const isPdf = f.mimeType === "application/pdf";
+        let claudeContent;
+        if (isPdf) {
+          const pages = await pdfToImages(b64);
+          claudeContent = [
+            ...pages.map(p => ({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: p } })),
+            { type: "text", text: "Analizza e classifica questo documento." }
+          ];
+        } else {
+          claudeContent = [
+            { type: "image", source: { type: "base64", media_type: "image/jpeg", data: b64 } },
+            { type: "text", text: "Analizza e classifica questo documento." }
+          ];
+        }
+        const parsed = await claudeClassify(claudeContent);
+        const ext = f.name.split(".").pop();
+        const newName = parsed.nomeFile + "." + ext;
+        const newCat = FOLDERS[parsed.categoria] ? parsed.categoria : "Altro";
+        const newYear = (newName.match(/^(\d{4})[-_]/) || [])[1] || String(new Date().getFullYear());
+        const changed = newName !== f.name || newCat !== f.currentCat;
+        results.push({ file: f, newName, newCat, newYear, changed, error: null });
+      } catch (e) {
+        results.push({ file: f, newName: null, newCat: null, newYear: null, changed: false, error: e.message });
+      }
+    }
+
+    document.getElementById("reclassProgressText").textContent = `Analisi completata — ${files.length} file`;
+    document.getElementById("reclassProgressFill").style.width = "100%";
+
+    // Render results
+    const list = document.getElementById("reclassFileList");
+    list.innerHTML = "";
+    results.forEach((r, idx) => {
+      const item = document.createElement("div");
+      item.className = "file-item";
+      if (r.error) {
+        item.innerHTML = `<div class="file-item-info"><div class="file-item-old">${r.file.name}</div><div class="file-item-err">⚠️ ${r.error}</div></div>`;
+      } else if (!r.changed) {
+        item.innerHTML = `<input type="checkbox" data-idx="${idx}" disabled><div class="file-item-info"><div class="file-item-same">✓ ${r.file.name}</div><div style="font-size:10px;color:#3a5a3a">${r.file.currentCat}${r.file.currentYear ? "/" + r.file.currentYear : ""}</div></div>`;
+      } else {
+        item.innerHTML = `<input type="checkbox" data-idx="${idx}" checked><div class="file-item-info"><div class="file-item-old">${r.file.currentCat}${r.file.currentYear ? "/" + r.file.currentYear : ""}/${r.file.name}</div><div class="file-item-new">→ ${r.newCat}/${r.newYear}/${r.newName}</div></div>`;
+      }
+      list.appendChild(item);
+    });
+
+    list._results = results;
+    document.getElementById("reclassResults").style.display = "block";
+
+  } catch(e) {
+    document.getElementById("reclassError").style.display = "block";
+    document.getElementById("reclassErrorMsg").textContent = "⚠️ " + e.message;
+  }
+
+  this.disabled = false;
+});
+
+document.getElementById("btnApplyReclass").addEventListener("click", async function() {
+  const list = document.getElementById("reclassFileList");
+  const results = list._results;
+  const checked = [...document.querySelectorAll("#reclassFileList input[type=checkbox]:checked")];
+
+  if (checked.length === 0) { alert("Nessun file selezionato."); return; }
+
+  this.disabled = true;
+  this.textContent = `Applicando 0/${checked.length}…`;
+
+  try {
+    if (!accessToken) accessToken = await getAccessToken();
+    for (let i = 0; i < checked.length; i++) {
+      const idx = parseInt(checked[i].dataset.idx);
+      const r = results[idx];
+      this.textContent = `Applicando ${i + 1}/${checked.length}…`;
+
+      const newCatFolderId = FOLDERS[r.newCat] || FOLDERS["Altro"];
+      const yearFolderId = await getOrCreateYearFolder(accessToken, newCatFolderId, r.newYear);
+
+      const params = r.file.parentId !== yearFolderId
+        ? `?addParents=${yearFolderId}&removeParents=${r.file.parentId}`
+        : "";
+      await fetch(`https://www.googleapis.com/drive/v3/files/${r.file.id}${params}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ name: r.newName }),
+      });
+
+      checked[i].closest(".file-item").style.opacity = "0.4";
+    }
+    this.textContent = "✓ Fatto";
+  } catch(e) {
+    this.disabled = false;
+    this.textContent = "Applica selezionati";
+    document.getElementById("reclassError").style.display = "block";
+    document.getElementById("reclassErrorMsg").textContent = "⚠️ " + e.message;
+  }
+});
+
+document.getElementById("btnReclassReset").addEventListener("click", function() {
+  document.getElementById("reclassProgress").style.display = "none";
+  document.getElementById("reclassResults").style.display = "none";
+  document.getElementById("reclassError").style.display = "none";
+  document.getElementById("reclassFileList").innerHTML = "";
+  document.getElementById("btnStartReclass").disabled = false;
+  document.getElementById("btnApplyReclass").disabled = false;
+  document.getElementById("btnApplyReclass").textContent = "Applica selezionati";
+});
 
 </script>
 </body>
