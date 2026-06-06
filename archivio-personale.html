@@ -150,6 +150,48 @@
     .btn-ghost { background: transparent; color: #555; border: 1px solid #2a2a2a; }
 
     #steps, #result, #error, #actionBtns { display: none; }
+
+    .api-setup {
+      background: #111;
+      border: 1.5px dashed #333;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .api-setup p { font-size: 12px; color: #666; margin-bottom: 12px; line-height: 1.5; }
+    .api-setup input {
+      width: 100%;
+      background: #0e0e0e;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: #c8b89a;
+      outline: none;
+      margin-bottom: 10px;
+    }
+    .api-setup input:focus { border-color: #555; }
+    .api-key-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #444;
+      margin-bottom: 16px;
+      padding: 0 2px;
+    }
+    .api-key-bar span { color: #5a7a5a; }
+    .api-key-bar button {
+      background: none;
+      border: none;
+      color: #555;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      cursor: pointer;
+      padding: 0;
+    }
+    .api-key-bar button:hover { color: #888; }
   </style>
 </head>
 <body>
@@ -161,8 +203,21 @@
   </div>
   <div class="body">
 
+    <!-- API Key setup (shown only if not saved) -->
+    <div class="api-setup" id="apiSetup">
+      <p>Inserisci la tua <strong style="color:#c8b89a">Anthropic API key</strong> — viene salvata solo nel browser, mai caricata su server.</p>
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" />
+      <button class="btn btn-primary" id="btnSaveKey" style="margin-top:0">Salva e continua</button>
+    </div>
+
+    <!-- API key bar (shown when key is saved) -->
+    <div class="api-key-bar" id="apiKeyBar" style="display:none">
+      <span>✓ API key configurata</span>
+      <button id="btnChangeKey">Cambia</button>
+    </div>
+
     <!-- Drop zone -->
-    <div class="dropzone" id="dropzone">
+    <div class="dropzone" id="dropzone" style="display:none">
       <div class="dropzone-icon">📄</div>
       <div class="dropzone-text">
         <strong>Seleziona documento</strong>
@@ -234,6 +289,38 @@ Formato nome: AAAA-MM_Categoria_Dettaglio_Importo (senza estensione, no spazi, u
 
 let currentFile = null;
 let accessToken = null;
+let ANTHROPIC_KEY = localStorage.getItem("anthropic_api_key") || "";
+
+// ── API Key UI ────────────────────────────────────────────────────────────────
+
+function initKeyUI() {
+  if (ANTHROPIC_KEY) {
+    document.getElementById("apiSetup").style.display = "none";
+    document.getElementById("apiKeyBar").style.display = "flex";
+    document.getElementById("dropzone").style.display = "block";
+  } else {
+    document.getElementById("apiSetup").style.display = "block";
+    document.getElementById("apiKeyBar").style.display = "none";
+    document.getElementById("dropzone").style.display = "none";
+  }
+}
+
+document.getElementById("btnSaveKey").addEventListener("click", function() {
+  const val = document.getElementById("apiKeyInput").value.trim();
+  if (!val.startsWith("sk-ant-")) { alert("Chiave non valida — deve iniziare con sk-ant-"); return; }
+  ANTHROPIC_KEY = val;
+  localStorage.setItem("anthropic_api_key", val);
+  document.getElementById("apiKeyInput").value = "";
+  initKeyUI();
+});
+
+document.getElementById("btnChangeKey").addEventListener("click", function() {
+  ANTHROPIC_KEY = "";
+  localStorage.removeItem("anthropic_api_key");
+  initKeyUI();
+});
+
+initKeyUI();
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -386,9 +473,14 @@ document.getElementById("btnRun").addEventListener("click", async function() {
     // Step 2 — Claude
     const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+          "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_KEY,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+        },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-4-6",
         max_tokens: 300,
         system: SYSTEM_PROMPT,
         messages: [{
