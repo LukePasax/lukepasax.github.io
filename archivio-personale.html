@@ -14,21 +14,78 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --bg: #0e0e0e;
+      --card-bg: #161616;
+      --card-border: #2a2a2a;
+      --text-primary: #f0ece4;
+      --text-secondary: #888;
+      --text-muted: #555;
+      --accent: #c8b89a;
+      --accent-hover: #d4c8b0;
+      --accent-dark: #0e0e0e;
+      --input-bg: #0e0e0e;
+      --input-border: #333;
+      --divider: #222;
+      --dropzone-bg: #111;
+      --preview-bg: #111;
+      --result-bg: #0d1a0d;
+      --result-border: #2a4a2a;
+      --result-text: #7ec87e;
+      --result-label: #4a7a4a;
+      --result-done: #5a7a5a;
+      --error-bg: #1a0d0d;
+      --error-border: #4a2a2a;
+      --error-text: #c87e7e;
+      --bulk-bg: #111;
+      --bulk-border: #222;
+      --file-item-bg: #111;
+    }
+
+    body.light {
+      --bg: #f0ece4;
+      --card-bg: #ffffff;
+      --card-border: #ddd8cf;
+      --text-primary: #1a1610;
+      --text-secondary: #666;
+      --text-muted: #999;
+      --accent: #8b6b3d;
+      --accent-hover: #7a5c30;
+      --accent-dark: #ffffff;
+      --input-bg: #f8f5f0;
+      --input-border: #ccc8bf;
+      --divider: #e8e3db;
+      --dropzone-bg: #f8f5f0;
+      --preview-bg: #f0ece4;
+      --result-bg: #eef5ee;
+      --result-border: #9ec49e;
+      --result-text: #2d6b2d;
+      --result-label: #3a7a3a;
+      --result-done: #3a6b3a;
+      --error-bg: #fdf0f0;
+      --error-border: #e0a0a0;
+      --error-text: #a03030;
+      --bulk-bg: #f8f5f0;
+      --bulk-border: #ddd8cf;
+      --file-item-bg: #f8f5f0;
+    }
+
     body {
-      background: #0e0e0e;
+      background: var(--bg);
       font-family: 'DM Mono', monospace;
       min-height: 100vh;
       display: flex;
       align-items: flex-start;
       justify-content: center;
       padding: 24px 16px 48px;
+      transition: background .2s;
     }
 
     .card {
       width: 100%;
       max-width: 420px;
-      background: #161616;
-      border: 1px solid #2a2a2a;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-radius: 16px;
       overflow: hidden;
       margin-top: 12px;
@@ -36,40 +93,54 @@
 
     .header {
       padding: 28px 28px 20px;
-      border-bottom: 1px solid #2a2a2a;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
     }
-    .header h1 {
+    .header-text h1 {
       font-family: 'DM Serif Display', serif;
       font-size: 22px;
-      color: #f0ece4;
+      color: var(--text-primary);
       font-weight: 400;
     }
-    .header p {
+    .header-text p {
       font-size: 11px;
-      color: #555;
+      color: var(--text-muted);
       margin-top: 4px;
       letter-spacing: 0.5px;
       text-transform: uppercase;
+    }
+    .theme-toggle {
+      background: none;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 6px 9px;
+      font-size: 16px;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-top: 2px;
+      line-height: 1;
     }
 
     .body { padding: 24px 28px 28px; }
 
     .dropzone {
-      border: 1.5px dashed #333;
+      border: 1.5px dashed var(--input-border);
       border-radius: 12px;
       padding: 28px 20px 20px;
       text-align: center;
-      background: #111;
+      background: var(--dropzone-bg);
       transition: border-color .2s;
     }
     .dropzone-icon { font-size: 32px; margin-bottom: 10px; }
-    .dropzone-text { font-size: 13px; color: #888; line-height: 1.5; margin-bottom: 16px; }
-    .dropzone-text strong { color: #c8b89a; display: block; font-size: 14px; margin-bottom: 4px; }
+    .dropzone-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px; }
+    .dropzone-text strong { color: var(--accent); display: block; font-size: 14px; margin-bottom: 4px; }
 
     .file-btn {
       display: inline-block;
-      background: #c8b89a;
-      color: #0e0e0e;
+      background: var(--accent);
+      color: var(--accent-dark);
       font-family: 'DM Mono', monospace;
       font-size: 13px;
       font-weight: 500;
@@ -78,28 +149,28 @@
       cursor: pointer;
       transition: background .2s;
     }
-    .file-btn:hover { background: #d4c8b0; }
+    .file-btn:hover { background: var(--accent-hover); }
     #fileInput { display: none; }
 
     .preview-wrap {
       border-radius: 10px;
       overflow: hidden;
       margin-bottom: 16px;
-      background: #111;
+      background: var(--preview-bg);
       max-height: 220px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .preview-wrap img { width: 100%; max-height: 220px; object-fit: contain; }
-    .preview-pdf { padding: 24px; text-align: center; color: #888; font-size: 12px; }
+    .preview-pdf { padding: 24px; text-align: center; color: var(--text-secondary); font-size: 12px; }
     .preview-pdf .pdf-icon { font-size: 40px; margin-bottom: 8px; }
 
-    .divider { height: 1px; background: #222; margin: 20px 0; }
+    .divider { height: 1px; background: var(--divider); margin: 20px 0; }
 
-    .step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; font-size: 12px; color: #555; }
-    .step.active { color: #c8b89a; }
-    .step.done { color: #5a7a5a; }
+    .step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; font-size: 12px; color: var(--text-muted); }
+    .step.active { color: var(--accent); }
+    .step.done { color: var(--result-done); }
     .step-dot {
       width: 20px; height: 20px; border-radius: 50%;
       border: 1.5px solid currentColor;
@@ -111,32 +182,32 @@
     .spin { animation: spin .8s linear infinite; display: inline-block; }
 
     .result-box {
-      background: #0d1a0d;
-      border: 1px solid #2a4a2a;
+      background: var(--result-bg);
+      border: 1px solid var(--result-border);
       border-radius: 10px;
       padding: 16px;
     }
-    .result-label { font-size: 10px; color: #4a7a4a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-    .result-cat { font-size: 15px; color: #7ec87e; font-family: 'DM Serif Display', serif; margin-bottom: 4px; }
-    .result-file { font-size: 11px; color: #5a8a5a; word-break: break-all; }
+    .result-label { font-size: 10px; color: var(--result-label); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .result-cat { font-size: 15px; color: var(--result-text); font-family: 'DM Serif Display', serif; margin-bottom: 4px; }
+    .result-file { font-size: 11px; color: var(--result-done); word-break: break-all; }
     .result-link {
       display: inline-block;
       margin-top: 12px;
       font-size: 11px;
-      color: #7ec87e;
+      color: var(--result-text);
       text-decoration: none;
-      border: 1px solid #2a4a2a;
+      border: 1px solid var(--result-border);
       padding: 6px 14px;
       border-radius: 6px;
     }
 
     .error-box {
-      background: #1a0d0d;
-      border: 1px solid #4a2a2a;
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
       border-radius: 10px;
       padding: 14px 16px;
       font-size: 12px;
-      color: #c87e7e;
+      color: var(--error-text);
     }
 
     .btn {
@@ -150,10 +221,10 @@
       transition: all .2s;
       margin-top: 12px;
     }
-    .btn-primary { background: #c8b89a; color: #0e0e0e; font-weight: 500; }
-    .btn-primary:hover { background: #d4c8b0; }
-    .btn-primary:disabled { background: #333; color: #555; cursor: not-allowed; }
-    .btn-ghost { background: transparent; color: #555; border: 1px solid #2a2a2a; }
+    .btn-primary { background: var(--accent); color: var(--accent-dark); font-weight: 500; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:disabled { background: var(--divider); color: var(--text-muted); cursor: not-allowed; }
+    .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--card-border); }
 
     #steps, #result, #error, #actionBtns, #queuePreview, #bulkReview { display: none; }
 
@@ -163,41 +234,41 @@
       align-items: center;
       gap: 10px;
       font-size: 11px;
-      color: #888;
+      color: var(--text-secondary);
       padding: 6px 0;
-      border-bottom: 1px solid #1e1e1e;
+      border-bottom: 1px solid var(--divider);
     }
     .queue-item:last-child { border-bottom: none; }
     .queue-item-icon { font-size: 16px; flex-shrink: 0; }
     .queue-item-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .queue-count { font-size: 12px; color: #c8b89a; margin-bottom: 12px; }
+    .queue-count { font-size: 12px; color: var(--accent); margin-bottom: 12px; }
 
     .bulk-item {
-      background: #111;
-      border: 1px solid #222;
+      background: var(--bulk-bg);
+      border: 1px solid var(--bulk-border);
       border-radius: 10px;
       padding: 12px;
       margin-bottom: 10px;
     }
-    .bulk-item-name { font-size: 10px; color: #555; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bulk-item-name { font-size: 10px; color: var(--text-muted); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .bulk-item select, .bulk-item input[type=text] {
       width: 100%;
-      background: #0e0e0e;
-      border: 1px solid #2a2a2a;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
       border-radius: 7px;
       padding: 7px 10px;
       font-family: 'DM Mono', monospace;
       font-size: 11px;
-      color: #c8b89a;
+      color: var(--accent);
       outline: none;
       margin-bottom: 6px;
     }
-    .bulk-item-err { font-size: 10px; color: #c87e7e; margin-top: 4px; }
-    .bulk-item-ok { font-size: 10px; color: #4a7a4a; margin-top: 6px; }
+    .bulk-item-err { font-size: 10px; color: var(--error-text); margin-top: 4px; }
+    .bulk-item-ok { font-size: 10px; color: var(--result-done); margin-top: 6px; }
 
     .tabs {
       display: flex;
-      border-bottom: 1px solid #2a2a2a;
+      border-bottom: 1px solid var(--card-border);
       margin: 0 -28px 20px;
       padding: 0 28px;
     }
@@ -206,7 +277,7 @@
       border: none;
       font-family: 'DM Mono', monospace;
       font-size: 11px;
-      color: #555;
+      color: var(--text-muted);
       padding: 10px 0;
       margin-right: 20px;
       cursor: pointer;
@@ -215,92 +286,101 @@
       letter-spacing: 0.5px;
       text-transform: uppercase;
     }
-    .tab-btn.active { color: #c8b89a; border-bottom-color: #c8b89a; }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
     .reclass-filters { margin-bottom: 14px; }
     .reclass-filter-row {
       display: flex;
       gap: 16px;
       font-size: 12px;
-      color: #666;
+      color: var(--text-secondary);
       margin-bottom: 12px;
     }
     .reclass-filter-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-    .reclass-filter-row input[type=radio] { accent-color: #c8b89a; }
+    .reclass-filter-row input[type=radio] { accent-color: var(--accent); }
     .reclass-input {
       width: 100%;
-      background: #0e0e0e;
-      border: 1px solid #333;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
       border-radius: 8px;
       padding: 9px 10px;
       font-family: 'DM Mono', monospace;
       font-size: 12px;
-      color: #c8b89a;
+      color: var(--accent);
       outline: none;
       margin-bottom: 10px;
     }
 
-    .reclass-progress { font-size: 12px; color: #888; margin: 16px 0 4px; }
+    .reclass-progress { font-size: 12px; color: var(--text-secondary); margin: 16px 0 4px; }
     .reclass-progress-bar {
       height: 3px;
-      background: #222;
+      background: var(--divider);
       border-radius: 2px;
       margin-bottom: 16px;
     }
-    .reclass-progress-fill { height: 100%; background: #c8b89a; border-radius: 2px; transition: width .3s; }
+    .reclass-progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s; }
 
     .file-item {
-      background: #111;
-      border: 1px solid #222;
+      background: var(--file-item-bg);
+      border: 1px solid var(--bulk-border);
       border-radius: 10px;
       padding: 12px;
       margin-bottom: 8px;
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
     }
-    .file-item input[type=checkbox] { accent-color: #c8b89a; margin-top: 2px; flex-shrink: 0; }
+    .file-item input[type=checkbox] { accent-color: var(--accent); margin-top: 2px; flex-shrink: 0; }
+    .file-item-header { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
     .file-item-info { font-size: 11px; flex: 1; min-width: 0; }
-    .file-item-old { color: #555; text-decoration: line-through; word-break: break-all; margin-bottom: 4px; }
-    .file-item-new { color: #c8b89a; word-break: break-all; }
-    .file-item-same { color: #4a7a4a; }
-    .file-item-err { color: #c87e7e; font-size: 10px; }
+    .file-item-old { color: var(--text-muted); text-decoration: line-through; word-break: break-all; margin-bottom: 4px; }
+    .file-item-same { color: var(--result-done); }
+    .file-item-err { color: var(--error-text); font-size: 10px; }
+    .file-item select, .file-item input[type=text] {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 7px;
+      padding: 7px 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      outline: none;
+      margin-bottom: 6px;
+    }
 
     .api-setup {
-      background: #111;
-      border: 1.5px dashed #333;
+      background: var(--dropzone-bg);
+      border: 1.5px dashed var(--input-border);
       border-radius: 12px;
       padding: 20px;
       margin-bottom: 16px;
     }
-    .api-setup p { font-size: 12px; color: #666; margin-bottom: 12px; line-height: 1.5; }
+    .api-setup p { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5; }
     .api-setup input {
       width: 100%;
-      background: #0e0e0e;
-      border: 1px solid #333;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
       border-radius: 8px;
       padding: 10px 12px;
       font-family: 'DM Mono', monospace;
       font-size: 11px;
-      color: #c8b89a;
+      color: var(--accent);
       outline: none;
       margin-bottom: 10px;
     }
-    .api-setup input:focus { border-color: #555; }
+    .api-setup input:focus { border-color: var(--text-secondary); }
     .api-key-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
       font-size: 10px;
-      color: #444;
+      color: var(--text-muted);
       margin-bottom: 16px;
       padding: 0 2px;
     }
-    .api-key-bar span { color: #5a7a5a; }
+    .api-key-bar span { color: var(--result-done); }
     .api-key-bar button {
       background: none;
       border: none;
-      color: #555;
+      color: var(--text-muted);
       font-family: 'DM Mono', monospace;
       font-size: 10px;
       cursor: pointer;
@@ -309,28 +389,31 @@
     .api-key-bar button:hover { color: #888; }
     .sync-bar {
       font-size: 10px;
-      color: #444;
+      color: var(--text-muted);
       margin-bottom: 16px;
       padding: 0 2px;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
-    .sync-bar span { color: #3a5a3a; }
+    .sync-bar span { color: var(--result-done); }
     .sync-bar button {
-      background: none; border: none; color: #555;
+      background: none; border: none; color: var(--text-secondary);
       font-family: 'DM Mono', monospace; font-size: 10px;
       cursor: pointer; padding: 0;
     }
-    .sync-bar button:hover { color: #888; }
+    .sync-bar button:hover { color: var(--text-primary); }
   </style>
 </head>
 <body>
 
 <div class="card">
   <div class="header">
-    <h1>Archivio Personale</h1>
-    <p>Analisi · Classificazione · Google Drive · <span style="color:#444">v13</span></p>
+    <div class="header-text">
+      <h1>Archivio Personale</h1>
+      <p>Analisi · Classificazione · Google Drive · v14</p>
+    </div>
+    <button class="theme-toggle" id="btnTheme">☀️</button>
   </div>
   <div class="body">
 
@@ -1199,7 +1282,24 @@ document.getElementById("btnStartReclass").addEventListener("click", async funct
         item.innerHTML = `<input type="checkbox" data-idx="${idx}" disabled><div class="file-item-info"><div class="file-item-same">✓ ${r.file.name}</div><div style="font-size:10px;color:#3a5a3a">${oldPath}</div></div>`;
       } else {
         const oldPath = [r.file.currentCat, r.file.currentPerson, r.file.currentYear].filter(Boolean).join("/");
-        item.innerHTML = `<input type="checkbox" data-idx="${idx}" checked><div class="file-item-info"><div class="file-item-old">${oldPath}/${r.file.name}</div><div class="file-item-new">→ ${r.newCat}/${r.newPerson}/${r.newYear}/${r.newName}</div></div>`;
+        const header = document.createElement("div");
+        header.className = "file-item-header";
+        const cb = document.createElement("input");
+        cb.type = "checkbox"; cb.checked = true; cb.dataset.idx = String(idx);
+        const info = document.createElement("div");
+        info.className = "file-item-info";
+        const old = document.createElement("div");
+        old.className = "file-item-old";
+        old.textContent = oldPath + "/" + r.file.name;
+        info.appendChild(old);
+        header.appendChild(cb);
+        header.appendChild(info);
+        item.appendChild(header);
+        item.appendChild(makeCatSelect(r.newCat));
+        item.appendChild(makePersonSelect(r.newPerson));
+        const nameInput = document.createElement("input");
+        nameInput.type = "text"; nameInput.value = r.newName;
+        item.appendChild(nameInput);
       }
       list.appendChild(item);
     });
@@ -1230,13 +1330,19 @@ document.getElementById("btnApplyReclass").addEventListener("click", async funct
     for (let i = 0; i < checked.length; i++) {
       const idx = parseInt(checked[i].dataset.idx);
       const r = results[idx];
+      const item = checked[i].closest(".file-item");
+      const selects = item.querySelectorAll("select");
+      const newCat = selects[0]?.value || r.newCat;
+      const newPerson = selects[1]?.value || r.newPerson;
+      const newName = (item.querySelector("input[type=text]")?.value.trim()) || r.newName;
+      const newYear = (newName.match(/^(\d{4})[-_]/) || [])[1] || String(new Date().getFullYear());
       this.textContent = `Applicando ${i + 1}/${checked.length}…`;
 
-      const newCatFolderId = FOLDERS[r.newCat] || FOLDERS["Altro"];
-      const personFolderId = await getOrCreateSubfolder(accessToken, newCatFolderId, r.newPerson);
+      const newCatFolderId = FOLDERS[newCat] || FOLDERS["Altro"];
+      const personFolderId = await getOrCreateSubfolder(accessToken, newCatFolderId, newPerson);
       let yearFolderId;
-      if (TEMPORAL_CATEGORIES.has(r.newCat)) {
-        yearFolderId = await getOrCreateYearFolder(accessToken, personFolderId, r.newYear);
+      if (TEMPORAL_CATEGORIES.has(newCat)) {
+        yearFolderId = await getOrCreateYearFolder(accessToken, personFolderId, newYear);
       } else {
         yearFolderId = personFolderId;
       }
@@ -1247,10 +1353,10 @@ document.getElementById("btnApplyReclass").addEventListener("click", async funct
       await fetch(`https://www.googleapis.com/drive/v3/files/${r.file.id}${params}`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ name: r.newName }),
+        body: JSON.stringify({ name: newName }),
       });
 
-      checked[i].closest(".file-item").style.opacity = "0.4";
+      item.style.opacity = "0.4";
     }
     this.textContent = "✓ Fatto";
   } catch(e) {
@@ -1260,6 +1366,19 @@ document.getElementById("btnApplyReclass").addEventListener("click", async funct
     document.getElementById("reclassErrorMsg").textContent = "⚠️ " + e.message;
   }
 });
+
+// ── Theme toggle ──────────────────────────────────────────────────────────────
+
+(function() {
+  if (localStorage.getItem("archivio_theme") === "light") document.body.classList.add("light");
+  const btn = document.getElementById("btnTheme");
+  btn.textContent = document.body.classList.contains("light") ? "🌙" : "☀️";
+  btn.addEventListener("click", function() {
+    const isLight = document.body.classList.toggle("light");
+    localStorage.setItem("archivio_theme", isLight ? "light" : "dark");
+    this.textContent = isLight ? "🌙" : "☀️";
+  });
+})();
 
 document.getElementById("btnReclassReset").addEventListener("click", function() {
   document.getElementById("reclassProgress").style.display = "none";
