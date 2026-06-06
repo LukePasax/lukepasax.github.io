@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>Archivio Personale</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0e0e0e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Archivio" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -265,6 +270,11 @@
 </div>
 
 <script src="https://accounts.google.com/gsi/client" async></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js");
+  }
+</script>
 <script>
 const CLIENT_ID = "587675640690-djilvb3nn1o446kctj6pvg9lu8drh1v2.apps.googleusercontent.com";
 const SCOPE = "https://www.googleapis.com/auth/drive.file";
