@@ -307,6 +307,22 @@
       padding: 0;
     }
     .api-key-bar button:hover { color: #888; }
+    .sync-bar {
+      font-size: 10px;
+      color: #444;
+      margin-bottom: 16px;
+      padding: 0 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sync-bar span { color: #3a5a3a; }
+    .sync-bar button {
+      background: none; border: none; color: #555;
+      font-family: 'DM Mono', monospace; font-size: 10px;
+      cursor: pointer; padding: 0;
+    }
+    .sync-bar button:hover { color: #888; }
   </style>
 </head>
 <body>
@@ -314,7 +330,7 @@
 <div class="card">
   <div class="header">
     <h1>Archivio Personale</h1>
-    <p>Analisi · Classificazione · Google Drive · <span style="color:#444">v11</span></p>
+    <p>Analisi · Classificazione · Google Drive · <span style="color:#444">v12</span></p>
   </div>
   <div class="body">
 
@@ -335,6 +351,12 @@
     <div class="api-key-bar" id="apiKeyBar" style="display:none">
       <span>✓ API key configurata</span>
       <button id="btnChangeKey">Cambia</button>
+    </div>
+
+    <!-- Sync bar -->
+    <div class="sync-bar" id="syncBar" style="display:none">
+      <span id="syncStatus">✓ Cartelle sincronizzate</span>
+      <button id="btnSync">Sincronizza cartelle Drive</button>
     </div>
 
     <!-- Drop zone -->
@@ -442,7 +464,11 @@
 const CLIENT_ID = "587675640690-djilvb3nn1o446kctj6pvg9lu8drh1v2.apps.googleusercontent.com";
 const SCOPE = "https://www.googleapis.com/auth/drive";
 
-const FOLDERS = {
+
+const PERSONS = ["Luca Pasini", "Paolo Pasini", "Andrea Manfredi", "Altro"];
+const ROOT_FOLDER_ID = "1nl1khW2hu99KjgkIgJUHrhuUreXnMBxa";
+
+const FOLDERS_DEFAULT = {
   "Spese Sanitarie":           "1Qe67w_CBtnPd_Fr49_pk6zLXs2y0P9Tb",
   "Certificati Medici":        "1CvbncUmpBvz57ex90zkhf8MKK_lKPCqm",
   "Buste Paga":                "1tX_wxHNsICi3HVWdQZH4mAG7dBAE8Qdl",
@@ -455,7 +481,7 @@ const FOLDERS = {
   "Altro":                     "1cQ5ANxiVjxn5tjyJWqhjT9fNaxh8jdvb",
 };
 
-const PERSONS = ["Luca Pasini", "Paolo Pasini", "Andrea Manfredi", "Altro"];
+let FOLDERS = JSON.parse(localStorage.getItem("archivio_folders") || "null") || { ...FOLDERS_DEFAULT };
 
 const SYSTEM_PROMPT = `Sei un assistente per l'archiviazione di documenti personali italiani.
 Analizza il documento e rispondi SOLO con JSON valido, senza backtick né testo extra.
@@ -474,15 +500,52 @@ function initKeyUI() {
   if (ANTHROPIC_KEY) {
     document.getElementById("apiSetup").style.display = "none";
     document.getElementById("apiKeyBar").style.display = "flex";
+    document.getElementById("syncBar").style.display = "flex";
     document.getElementById("tabs").style.display = "flex";
     document.getElementById("dropzone").style.display = "block";
+    const saved = localStorage.getItem("archivio_folders");
+    document.getElementById("syncStatus").textContent = saved
+      ? "✓ Cartelle sincronizzate"
+      : "⚠ Usando cartelle di default";
   } else {
     document.getElementById("apiSetup").style.display = "block";
     document.getElementById("apiKeyBar").style.display = "none";
+    document.getElementById("syncBar").style.display = "none";
     document.getElementById("tabs").style.display = "none";
     document.getElementById("dropzone").style.display = "none";
   }
 }
+
+async function syncFolders() {
+  const status = document.getElementById("syncStatus");
+  status.textContent = "Sincronizzazione…";
+  try {
+    if (!accessToken) accessToken = await getAccessToken();
+    const q = `'${ROOT_FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    const res = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const data = await res.json();
+    const newFolders = {};
+    (data.files || []).forEach(f => { newFolders[f.name] = f.id; });
+    // Merge: keep defaults for folders not found on Drive
+    Object.assign(newFolders, Object.fromEntries(
+      Object.entries(FOLDERS_DEFAULT).filter(([k]) => !newFolders[k])
+    ));
+    Object.assign(FOLDERS, newFolders);
+    // Remove keys no longer on Drive (except defaults)
+    Object.keys(FOLDERS).forEach(k => {
+      if (!newFolders[k] && !FOLDERS_DEFAULT[k]) delete FOLDERS[k];
+    });
+    localStorage.setItem("archivio_folders", JSON.stringify(FOLDERS));
+    status.textContent = `✓ ${Object.keys(FOLDERS).length} cartelle sincronizzate`;
+  } catch(e) {
+    status.textContent = "⚠ Errore sincronizzazione";
+  }
+}
+
+document.getElementById("btnSync").addEventListener("click", syncFolders);
 
 function switchTab(tab) {
   const isArchivia = tab === "archivia";
