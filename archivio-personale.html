@@ -522,7 +522,7 @@ document.getElementById("btnRun").addEventListener("click", async function() {
       mimeType = "image/jpeg";
     } else {
       base64 = await fileToBase64(currentFile);
-      mimeType = currentFile.type || "application/pdf";
+      mimeType = "application/pdf";
     }
     setStep(0, "done"); setStep(1, "active");
 
