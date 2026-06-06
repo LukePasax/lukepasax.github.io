@@ -1104,6 +1104,7 @@ document.getElementById("btnNew").addEventListener("click", resetUI);
 
 async function driveGet(token, url) {
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error(`Drive API ${res.status} — prova a ricaricare la pagina`);
   return res.json();
 }
 
