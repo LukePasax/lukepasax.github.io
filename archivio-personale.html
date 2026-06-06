@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Archivio Personale</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0e0e0e;
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 24px 16px 48px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: #161616;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+
+    .header {
+      padding: 28px 28px 20px;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    .header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: #f0ece4;
+      font-weight: 400;
+    }
+    .header p {
+      font-size: 11px;
+      color: #555;
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .body { padding: 24px 28px 28px; }
+
+    .dropzone {
+      border: 1.5px dashed #333;
+      border-radius: 12px;
+      padding: 28px 20px 20px;
+      text-align: center;
+      background: #111;
+      transition: border-color .2s;
+    }
+    .dropzone-icon { font-size: 32px; margin-bottom: 10px; }
+    .dropzone-text { font-size: 13px; color: #888; line-height: 1.5; margin-bottom: 16px; }
+    .dropzone-text strong { color: #c8b89a; display: block; font-size: 14px; margin-bottom: 4px; }
+
+    .file-btn {
+      display: inline-block;
+      background: #c8b89a;
+      color: #0e0e0e;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 12px 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .file-btn:hover { background: #d4c8b0; }
+    #fileInput { display: none; }
+
+    .preview-wrap {
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      background: #111;
+      max-height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .preview-wrap img { width: 100%; max-height: 220px; object-fit: contain; }
+    .preview-pdf { padding: 24px; text-align: center; color: #888; font-size: 12px; }
+    .preview-pdf .pdf-icon { font-size: 40px; margin-bottom: 8px; }
+
+    .divider { height: 1px; background: #222; margin: 20px 0; }
+
+    .step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; font-size: 12px; color: #555; }
+    .step.active { color: #c8b89a; }
+    .step.done { color: #5a7a5a; }
+    .step-dot {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 1.5px solid currentColor;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; margin-top: 1px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin .8s linear infinite; display: inline-block; }
+
+    .result-box {
+      background: #0d1a0d;
+      border: 1px solid #2a4a2a;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .result-label { font-size: 10px; color: #4a7a4a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .result-cat { font-size: 15px; color: #7ec87e; font-family: 'DM Serif Display', serif; margin-bottom: 4px; }
+    .result-file { font-size: 11px; color: #5a8a5a; word-break: break-all; }
+    .result-link {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 11px;
+      color: #7ec87e;
+      text-decoration: none;
+      border: 1px solid #2a4a2a;
+      padding: 6px 14px;
+      border-radius: 6px;
+    }
+
+    .error-box {
+      background: #1a0d0d;
+      border: 1px solid #4a2a2a;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 12px;
+      color: #c87e7e;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all .2s;
+      margin-top: 12px;
+    }
+    .btn-primary { background: #c8b89a; color: #0e0e0e; font-weight: 500; }
+    .btn-primary:hover { background: #d4c8b0; }
+    .btn-primary:disabled { background: #333; color: #555; cursor: not-allowed; }
+    .btn-ghost { background: transparent; color: #555; border: 1px solid #2a2a2a; }
+
+    #steps, #result, #error, #actionBtns { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <h1>Archivio Personale</h1>
+    <p>Analisi · Classificazione · Google Drive</p>
+  </div>
+  <div class="body">
+
+    <!-- Drop zone -->
+    <div class="dropzone" id="dropzone">
+      <div class="dropzone-icon">📄</div>
+      <div class="dropzone-text">
+        <strong>Seleziona documento</strong>
+        Foto, scansione o PDF
+      </div>
+      <label class="file-btn" for="fileInput">Scegli file</label>
+      <input type="file" id="fileInput" accept="image/*,application/pdf" />
+    </div>
+
+    <!-- Preview -->
+    <div id="preview"></div>
+
+    <!-- Steps -->
+    <div id="steps">
+      <div class="divider"></div>
+      <div class="step" id="s0"><div class="step-dot" id="d0">○</div>Analisi documento</div>
+      <div class="step" id="s1"><div class="step-dot" id="d1">○</div>Classificazione</div>
+      <div class="step" id="s2"><div class="step-dot" id="d2">○</div>Caricamento su Drive</div>
+    </div>
+
+    <!-- Result -->
+    <div id="result">
+      <div class="divider"></div>
+      <div class="result-box">
+        <div class="result-label">Archiviato</div>
+        <div class="result-cat" id="rCat"></div>
+        <div class="result-file" id="rFile"></div>
+        <a class="result-link" id="rLink" target="_blank">Apri su Drive →</a>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div id="error">
+      <div class="divider"></div>
+      <div class="error-box" id="errorMsg"></div>
+    </div>
+
+    <!-- Buttons -->
+    <div id="actionBtns">
+      <button class="btn btn-primary" id="btnRun">Analizza e archivia</button>
+      <button class="btn btn-ghost" id="btnReset">Cambia file</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async></script>
+<script>
+const CLIENT_ID = "587675640690-djilvb3nn1o446kctj6pvg9lu8drh1v2.apps.googleusercontent.com";
+const SCOPE = "https://www.googleapis.com/auth/drive.file";
+
+const FOLDERS = {
+  "Spese Sanitarie":           "1Qe67w_CBtnPd_Fr49_pk6zLXs2y0P9Tb",
+  "Buste Paga":                "1tX_wxHNsICi3HVWdQZH4mAG7dBAE8Qdl",
+  "Documenti d'Identità":      "1zOKVoJNHm1g7sM4QtVRqLaMV2SHfyi-a",
+  "Dichiarazione dei Redditi": "16CTZkDW_8O-hyKWTPbrvnuTfgq5e_7h0",
+  "Assicurazioni":             "1GLeCUEE4ppD7I8yq1vVdBqgqHU516L7h",
+  "Bollette & Utenze":         "1lwIewc4TotMVkMb8GmoROfFsUkpmzyaL",
+  "Banca & Finanze":           "1dclOLYrKCKl_SDGjByuMhz0bJS7JeCoV",
+  "Contratti":                 "1CmnmpcHQqDYYxjKxHgOaPUGAPA6yy3RU",
+  "Altro":                     "1cQ5ANxiVjxn5tjyJWqhjT9fNaxh8jdvb",
+};
+
+const SYSTEM_PROMPT = `Sei un assistente per l'archiviazione di documenti personali italiani.
+Analizza il documento e rispondi SOLO con JSON valido, senza backtick né testo extra.
+Categorie: Spese Sanitarie, Buste Paga, Documenti d'Identità, Dichiarazione dei Redditi, Assicurazioni, Bollette & Utenze, Banca & Finanze, Contratti, Altro.
+Formato nome: AAAA-MM_Categoria_Dettaglio_Importo (senza estensione, no spazi, usa _, importo solo se rilevante con €)
+{"categoria":"...","nomeFile":"...","descrizione":"...","certezza":0}`;
+
+let currentFile = null;
+let accessToken = null;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(",")[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function compressImage(file, maxPx = 1600, quality = 0.82) {
+  return new Promise((res) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (Math.max(width, height) > maxPx) {
+        const ratio = maxPx / Math.max(width, height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width; canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      canvas.toBlob(blob => res(blob || file), "image/jpeg", quality);
+    };
+    img.onerror = () => res(file);
+    img.src = url;
+  });
+}
+
+function getAccessToken() {
+  return new Promise((resolve, reject) => {
+    const wait = (n) => {
+      if (n <= 0) { reject(new Error("Google Identity Services non caricato")); return; }
+      if (window.google?.accounts?.oauth2) {
+        const client = window.google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPE,
+          callback: (resp) => resp.error ? reject(new Error(resp.error)) : resolve(resp.access_token),
+        });
+        client.requestAccessToken({ prompt: "" });
+      } else {
+        setTimeout(() => wait(n - 1), 300);
+      }
+    };
+    wait(20);
+  });
+}
+
+async function uploadToDrive(token, fileName, mimeType, base64Data, folderId) {
+  const metadata = { name: fileName, parents: [folderId] };
+  const boundary = "archivio_boundary";
+  const body = [
+    `--${boundary}`,
+    "Content-Type: application/json; charset=UTF-8",
+    "",
+    JSON.stringify(metadata),
+    `--${boundary}`,
+    `Content-Type: ${mimeType}`,
+    "Content-Transfer-Encoding: base64",
+    "",
+    base64Data,
+    `--${boundary}--`,
+  ].join("\r\n");
+
+  const res = await fetch(
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": `multipart/related; boundary=${boundary}`,
+      },
+      body,
+    }
+  );
+  if (!res.ok) throw new Error(`Drive upload error: ${res.status}`);
+  return res.json();
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+
+function setStep(i, state) {
+  const s = document.getElementById("s" + i);
+  const d = document.getElementById("d" + i);
+  s.className = "step" + (state === "active" ? " active" : state === "done" ? " done" : "");
+  d.innerHTML = state === "done" ? "✓" : state === "active" ? '<span class="spin">◌</span>' : "○";
+}
+
+function showError(msg) {
+  document.getElementById("error").style.display = "block";
+  document.getElementById("errorMsg").textContent = "⚠️ " + msg;
+  document.getElementById("btnRun").style.display = "block";
+  document.getElementById("btnRun").disabled = false;
+  document.getElementById("btnRun").textContent = "Riprova";
+}
+
+// ── File selection ────────────────────────────────────────────────────────────
+
+document.getElementById("fileInput").addEventListener("change", function(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  currentFile = file;
+
+  // Show preview
+  const previewEl = document.getElementById("preview");
+  if (file.type.startsWith("image/")) {
+    const url = URL.createObjectURL(file);
+    previewEl.innerHTML = `<div class="preview-wrap"><img src="${url}" /></div>`;
+  } else {
+    previewEl.innerHTML = `<div class="preview-wrap"><div class="preview-pdf"><div class="pdf-icon">📋</div>${file.name}</div></div>`;
+  }
+
+  document.getElementById("dropzone").style.display = "none";
+  document.getElementById("actionBtns").style.display = "block";
+  document.getElementById("error").style.display = "none";
+  document.getElementById("result").style.display = "none";
+  document.getElementById("steps").style.display = "none";
+  document.getElementById("btnRun").textContent = "Analizza e archivia";
+  document.getElementById("btnRun").disabled = false;
+});
+
+// ── Run ───────────────────────────────────────────────────────────────────────
+
+document.getElementById("btnRun").addEventListener("click", async function() {
+  if (!currentFile) return;
+  this.disabled = true;
+  document.getElementById("error").style.display = "none";
+  document.getElementById("result").style.display = "none";
+  document.getElementById("steps").style.display = "block";
+  setStep(0, "active"); setStep(1, ""); setStep(2, "");
+
+  try {
+    // Step 1 — prepare
+    let base64, mimeType;
+    if (currentFile.type.startsWith("image/")) {
+      const compressed = await compressImage(currentFile);
+      base64 = await fileToBase64(compressed);
+      mimeType = "image/jpeg";
+    } else {
+      base64 = await fileToBase64(currentFile);
+      mimeType = currentFile.type || "application/pdf";
+    }
+    setStep(0, "done"); setStep(1, "active");
+
+    // Step 2 — Claude
+    const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 300,
+        system: SYSTEM_PROMPT,
+        messages: [{
+          role: "user",
+          content: [
+            {
+              type: currentFile.type.startsWith("image/") ? "image" : "document",
+              source: { type: "base64", media_type: mimeType, data: base64 },
+            },
+            { type: "text", text: "Analizza e classifica questo documento." }
+          ],
+        }],
+      }),
+    });
+    if (!claudeRes.ok) throw new Error("Claude API: " + claudeRes.status);
+    const claudeData = await claudeRes.json();
+    const raw = claudeData.content?.find(b => b.type === "text")?.text || "";
+    let parsed;
+    try { parsed = JSON.parse(raw.replace(/```json|```/g, "").trim()); }
+    catch { throw new Error("Risposta non valida: " + raw.slice(0, 80)); }
+
+    const ext = currentFile.name.split(".").pop() || (currentFile.type === "application/pdf" ? "pdf" : "jpg");
+    const fileName = parsed.nomeFile + "." + ext;
+    const folderId = FOLDERS[parsed.categoria] || FOLDERS["Altro"];
+    setStep(1, "done"); setStep(2, "active");
+
+    // Step 3 — Drive
+    if (!accessToken) accessToken = await getAccessToken();
+    const driveFile = await uploadToDrive(accessToken, fileName, mimeType, base64, folderId);
+    setStep(2, "done");
+
+    // Show result
+    document.getElementById("rCat").textContent = "📁 " + parsed.categoria;
+    document.getElementById("rFile").textContent = fileName;
+    document.getElementById("rLink").href = driveFile.webViewLink;
+    document.getElementById("result").style.display = "block";
+    document.getElementById("btnRun").style.display = "none";
+
+  } catch(e) {
+    showError(e.message);
+  }
+});
+
+// ── Reset ─────────────────────────────────────────────────────────────────────
+
+document.getElementById("btnReset").addEventListener("click", function() {
+  currentFile = null;
+  document.getElementById("fileInput").value = "";
+  document.getElementById("preview").innerHTML = "";
+  document.getElementById("dropzone").style.display = "block";
+  document.getElementById("actionBtns").style.display = "none";
+  document.getElementById("steps").style.display = "none";
+  document.getElementById("result").style.display = "none";
+  document.getElementById("error").style.display = "none";
+  document.getElementById("btnRun").style.display = "block";
+  document.getElementById("btnRun").disabled = false;
+  document.getElementById("btnRun").textContent = "Analizza e archivia";
+});
+</script>
+</body>
+</html>
