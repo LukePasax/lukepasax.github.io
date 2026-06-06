@@ -10,6 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Archivio" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -384,6 +385,27 @@ function compressImage(file, maxPx = 1600, quality = 0.82) {
   });
 }
 
+async function pdfToImages(base64) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+  const images = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const viewport = page.getViewport({ scale: 1.5 });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+    images.push(dataUrl.split(",")[1]);
+  }
+  return images;
+}
+
 function getAccessToken() {
   return new Promise((resolve, reject) => {
     const wait = (n) => {
@@ -515,14 +537,23 @@ document.getElementById("btnRun").addEventListener("click", async function() {
   setStep(0, "active"); setStep(1, ""); setStep(2, "");
 
   try {
-    let base64, mimeType;
+    let base64, mimeType, claudeContent;
     if (currentFile.type.startsWith("image/")) {
       const compressed = await compressImage(currentFile);
       base64 = await fileToBase64(compressed);
       mimeType = "image/jpeg";
+      claudeContent = [
+        { type: "image", source: { type: "base64", media_type: "image/jpeg", data: base64 } },
+        { type: "text", text: "Analizza e classifica questo documento." }
+      ];
     } else {
       base64 = await fileToBase64(currentFile);
       mimeType = "application/pdf";
+      const pages = await pdfToImages(base64);
+      claudeContent = [
+        ...pages.map(p => ({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: p } })),
+        { type: "text", text: "Analizza e classifica questo documento." }
+      ];
     }
     setStep(0, "done"); setStep(1, "active");
 
@@ -538,16 +569,7 @@ document.getElementById("btnRun").addEventListener("click", async function() {
         model: "claude-sonnet-4-6",
         max_tokens: 300,
         system: SYSTEM_PROMPT,
-        messages: [{
-          role: "user",
-          content: [
-            {
-              type: currentFile.type.startsWith("image/") ? "image" : "document",
-              source: { type: "base64", media_type: mimeType, data: base64 },
-            },
-            { type: "text", text: "Analizza e classifica questo documento." }
-          ],
-        }],
+        messages: [{ role: "user", content: claudeContent }],
       }),
     });
     if (!claudeRes.ok) throw new Error("Claude API: " + claudeRes.status);
