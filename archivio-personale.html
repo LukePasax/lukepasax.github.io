@@ -243,6 +243,24 @@
       <div class="step" id="s2"><div class="step-dot" id="d2">○</div>Caricamento su Drive</div>
     </div>
 
+    <!-- Review (after Claude, before upload) -->
+    <div id="review" style="display:none">
+      <div class="divider"></div>
+      <div class="result-box" style="background:#111;border-color:#333">
+        <div class="result-label" style="color:#888">Controlla e correggi</div>
+        <div style="margin-top:10px;margin-bottom:8px">
+          <div style="font-size:10px;color:#555;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Categoria</div>
+          <select id="reviewCat" style="width:100%;background:#0e0e0e;border:1px solid #333;border-radius:8px;padding:9px 10px;font-family:'DM Mono',monospace;font-size:12px;color:#c8b89a;outline:none"></select>
+        </div>
+        <div>
+          <div style="font-size:10px;color:#555;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Nome file</div>
+          <input id="reviewName" type="text" style="width:100%;background:#0e0e0e;border:1px solid #333;border-radius:8px;padding:9px 10px;font-family:'DM Mono',monospace;font-size:11px;color:#c8b89a;outline:none" />
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btnConfirm" style="margin-top:12px">Carica su Drive</button>
+      <button class="btn btn-ghost" id="btnReset2">Cambia file</button>
+    </div>
+
     <!-- Result -->
     <div id="result">
       <div class="divider"></div>
@@ -281,6 +299,7 @@ const SCOPE = "https://www.googleapis.com/auth/drive.file";
 
 const FOLDERS = {
   "Spese Sanitarie":           "1Qe67w_CBtnPd_Fr49_pk6zLXs2y0P9Tb",
+  "Certificati Medici":        "1CvbncUmpBvz57ex90zkhf8MKK_lKPCqm",
   "Buste Paga":                "1tX_wxHNsICi3HVWdQZH4mAG7dBAE8Qdl",
   "Documenti d'Identità":      "1zOKVoJNHm1g7sM4QtVRqLaMV2SHfyi-a",
   "Dichiarazione dei Redditi": "16CTZkDW_8O-hyKWTPbrvnuTfgq5e_7h0",
@@ -293,7 +312,7 @@ const FOLDERS = {
 
 const SYSTEM_PROMPT = `Sei un assistente per l'archiviazione di documenti personali italiani.
 Analizza il documento e rispondi SOLO con JSON valido, senza backtick né testo extra.
-Categorie: Spese Sanitarie, Buste Paga, Documenti d'Identità, Dichiarazione dei Redditi, Assicurazioni, Bollette & Utenze, Banca & Finanze, Contratti, Altro.
+Categorie: Spese Sanitarie, Certificati Medici, Buste Paga, Documenti d'Identità, Dichiarazione dei Redditi, Assicurazioni, Bollette & Utenze, Banca & Finanze, Contratti, Altro.
 Formato nome: AAAA-MM_Categoria_Dettaglio_Importo (senza estensione, no spazi, usa _, importo solo se rilevante con €)
 {"categoria":"...","nomeFile":"...","descrizione":"...","certezza":0}`;
 
@@ -432,14 +451,40 @@ function showError(msg) {
   document.getElementById("btnRun").textContent = "Riprova";
 }
 
+function resetUI() {
+  currentFile = null;
+  pendingUpload = null;
+  document.getElementById("fileInput").value = "";
+  document.getElementById("preview").innerHTML = "";
+  document.getElementById("dropzone").style.display = "block";
+  document.getElementById("actionBtns").style.display = "none";
+  document.getElementById("steps").style.display = "none";
+  document.getElementById("review").style.display = "none";
+  document.getElementById("result").style.display = "none";
+  document.getElementById("error").style.display = "none";
+  document.getElementById("btnRun").style.display = "block";
+  document.getElementById("btnRun").disabled = false;
+  document.getElementById("btnRun").textContent = "Analizza e archivia";
+}
+
+// Populate category dropdown
+const reviewCat = document.getElementById("reviewCat");
+Object.keys(FOLDERS).forEach(cat => {
+  const opt = document.createElement("option");
+  opt.value = cat;
+  opt.textContent = cat;
+  reviewCat.appendChild(opt);
+});
+
 // ── File selection ────────────────────────────────────────────────────────────
+
+let pendingUpload = null; // { base64, mimeType, ext }
 
 document.getElementById("fileInput").addEventListener("change", function(e) {
   const file = e.target.files?.[0];
   if (!file) return;
   currentFile = file;
 
-  // Show preview
   const previewEl = document.getElementById("preview");
   if (file.type.startsWith("image/")) {
     const url = URL.createObjectURL(file);
@@ -452,23 +497,24 @@ document.getElementById("fileInput").addEventListener("change", function(e) {
   document.getElementById("actionBtns").style.display = "block";
   document.getElementById("error").style.display = "none";
   document.getElementById("result").style.display = "none";
+  document.getElementById("review").style.display = "none";
   document.getElementById("steps").style.display = "none";
   document.getElementById("btnRun").textContent = "Analizza e archivia";
   document.getElementById("btnRun").disabled = false;
 });
 
-// ── Run ───────────────────────────────────────────────────────────────────────
+// ── Run (analisi Claude) ──────────────────────────────────────────────────────
 
 document.getElementById("btnRun").addEventListener("click", async function() {
   if (!currentFile) return;
   this.disabled = true;
   document.getElementById("error").style.display = "none";
   document.getElementById("result").style.display = "none";
+  document.getElementById("review").style.display = "none";
   document.getElementById("steps").style.display = "block";
   setStep(0, "active"); setStep(1, ""); setStep(2, "");
 
   try {
-    // Step 1 — prepare
     let base64, mimeType;
     if (currentFile.type.startsWith("image/")) {
       const compressed = await compressImage(currentFile);
@@ -480,15 +526,14 @@ document.getElementById("btnRun").addEventListener("click", async function() {
     }
     setStep(0, "done"); setStep(1, "active");
 
-    // Step 2 — Claude
     const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-          "Content-Type": "application/json",
-          "x-api-key": ANTHROPIC_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
         max_tokens: 300,
@@ -513,42 +558,58 @@ document.getElementById("btnRun").addEventListener("click", async function() {
     catch { throw new Error("Risposta non valida: " + raw.slice(0, 80)); }
 
     const ext = currentFile.name.split(".").pop() || (currentFile.type === "application/pdf" ? "pdf" : "jpg");
-    const fileName = parsed.nomeFile + "." + ext;
-    const folderId = FOLDERS[parsed.categoria] || FOLDERS["Altro"];
-    setStep(1, "done"); setStep(2, "active");
+    pendingUpload = { base64, mimeType, ext };
 
-    // Step 3 — Drive
-    if (!accessToken) accessToken = await getAccessToken();
-    const driveFile = await uploadToDrive(accessToken, fileName, mimeType, base64, folderId);
-    setStep(2, "done");
+    setStep(1, "done");
+    document.getElementById("steps").style.display = "none";
+    document.getElementById("actionBtns").style.display = "none";
 
-    // Show result
-    document.getElementById("rCat").textContent = "📁 " + parsed.categoria;
-    document.getElementById("rFile").textContent = fileName;
-    document.getElementById("rLink").href = driveFile.webViewLink;
-    document.getElementById("result").style.display = "block";
-    document.getElementById("btnRun").style.display = "none";
+    // Populate review panel
+    document.getElementById("reviewCat").value = FOLDERS[parsed.categoria] ? parsed.categoria : "Altro";
+    document.getElementById("reviewName").value = parsed.nomeFile + "." + ext;
+    document.getElementById("review").style.display = "block";
 
   } catch(e) {
     showError(e.message);
   }
 });
 
+// ── Confirm (caricamento Drive) ───────────────────────────────────────────────
+
+document.getElementById("btnConfirm").addEventListener("click", async function() {
+  if (!pendingUpload) return;
+  this.disabled = true;
+  this.textContent = "Caricamento…";
+  document.getElementById("error").style.display = "none";
+
+  try {
+    const categoria = document.getElementById("reviewCat").value;
+    const fileName = document.getElementById("reviewName").value.trim();
+    const folderId = FOLDERS[categoria] || FOLDERS["Altro"];
+    const { base64, mimeType } = pendingUpload;
+
+    if (!accessToken) accessToken = await getAccessToken();
+    const driveFile = await uploadToDrive(accessToken, fileName, mimeType, base64, folderId);
+
+    document.getElementById("rCat").textContent = "📁 " + categoria;
+    document.getElementById("rFile").textContent = fileName;
+    document.getElementById("rLink").href = driveFile.webViewLink;
+    document.getElementById("review").style.display = "none";
+    document.getElementById("result").style.display = "block";
+    pendingUpload = null;
+
+  } catch(e) {
+    this.disabled = false;
+    this.textContent = "Carica su Drive";
+    showError(e.message);
+  }
+});
+
 // ── Reset ─────────────────────────────────────────────────────────────────────
 
-document.getElementById("btnReset").addEventListener("click", function() {
-  currentFile = null;
-  document.getElementById("fileInput").value = "";
-  document.getElementById("preview").innerHTML = "";
-  document.getElementById("dropzone").style.display = "block";
-  document.getElementById("actionBtns").style.display = "none";
-  document.getElementById("steps").style.display = "none";
-  document.getElementById("result").style.display = "none";
-  document.getElementById("error").style.display = "none";
-  document.getElementById("btnRun").style.display = "block";
-  document.getElementById("btnRun").disabled = false;
-  document.getElementById("btnRun").textContent = "Analizza e archivia";
-});
+document.getElementById("btnReset").addEventListener("click", resetUI);
+document.getElementById("btnReset2").addEventListener("click", resetUI);
+
 </script>
 </body>
 </html>
