@@ -411,7 +411,7 @@
   <div class="header">
     <div class="header-text">
       <h1>Archivio Personale</h1>
-      <p>Analisi · Classificazione · Google Drive · v15</p>
+      <p>Analisi · Classificazione · Google Drive · v16</p>
     </div>
     <button class="theme-toggle" id="btnTheme">☀️</button>
   </div>
@@ -1224,13 +1224,15 @@ document.getElementById("btnStartReclass").addEventListener("click", async funct
 
   try {
     if (!accessToken) accessToken = await getAccessToken();
+    document.getElementById("reclassProgressText").textContent = "Recupero lista file da Drive…";
     const files = await listArchivioFiles(accessToken, filter);
 
     if (files.length === 0) {
-      document.getElementById("reclassProgressText").textContent = "Nessun file trovato.";
+      document.getElementById("reclassProgressText").textContent = "Nessun file trovato nelle cartelle Drive.";
       this.disabled = false;
       return;
     }
+    document.getElementById("reclassProgressText").textContent = `Trovati ${files.length} file — avvio analisi…`;
 
     const results = [];
     for (let i = 0; i < files.length; i++) {
