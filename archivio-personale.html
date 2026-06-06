@@ -411,7 +411,7 @@
   <div class="header">
     <div class="header-text">
       <h1>Archivio Personale</h1>
-      <p>Analisi · Classificazione · Google Drive · v16</p>
+      <p>Analisi · Classificazione · Google Drive · v17</p>
     </div>
     <button class="theme-toggle" id="btnTheme">☀️</button>
   </div>
@@ -1103,9 +1103,21 @@ document.getElementById("btnNew").addEventListener("click", resetUI);
 // ── Reclassify helpers ────────────────────────────────────────────────────────
 
 async function driveGet(token, url) {
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) throw new Error(`Drive API ${res.status} — prova a ricaricare la pagina`);
-  return res.json();
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, signal: ctrl.signal });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Drive API ${res.status}${body ? ": " + body.slice(0, 120) : ""}`);
+    }
+    return res.json();
+  } catch(e) {
+    if (e.name === "AbortError") throw new Error("Timeout Drive API — riprova");
+    throw e;
+  } finally {
+    clearTimeout(t);
+  }
 }
 
 async function listDirectFiles(token, folderId) {
