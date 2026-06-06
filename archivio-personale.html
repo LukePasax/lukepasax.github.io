@@ -330,7 +330,7 @@
 <div class="card">
   <div class="header">
     <h1>Archivio Personale</h1>
-    <p>Analisi · Classificazione · Google Drive · <span style="color:#444">v12</span></p>
+    <p>Analisi · Classificazione · Google Drive · <span style="color:#444">v13</span></p>
   </div>
   <div class="body">
 
@@ -465,19 +465,35 @@ const CLIENT_ID = "587675640690-djilvb3nn1o446kctj6pvg9lu8drh1v2.apps.googleuser
 const SCOPE = "https://www.googleapis.com/auth/drive";
 
 
-const PERSONS = ["Luca Pasini", "Paolo Pasini", "Andrea Manfredi", "Altro"];
+const PERSONS = ["Luca Pasini", "Paolo Pasini", "Andrea Manfredi", "Maria", "Altro"];
 const ROOT_FOLDER_ID = "1nl1khW2hu99KjgkIgJUHrhuUreXnMBxa";
+
+// Categories where year subfolder is created
+const TEMPORAL_CATEGORIES = new Set([
+  "Spese Sanitarie", "Ricette Mediche", "Referti & Esami", "Buste Paga",
+  "Dichiarazione dei Redditi", "Pagamenti & F24", "Bollette & Utenze",
+  "Banca & Finanze", "Assicurazioni", "Altro"
+]);
+
+// Categories where importo is relevant in filename
+const EXPENSE_CATEGORIES = new Set([
+  "Spese Sanitarie", "Bollette & Utenze", "Banca & Finanze", "Pagamenti & F24"
+]);
 
 const FOLDERS_DEFAULT = {
   "Spese Sanitarie":           "1Qe67w_CBtnPd_Fr49_pk6zLXs2y0P9Tb",
+  "Ricette Mediche":           "1zg56kRVodA0-UoYaKuhfm1mlzTO67W5R",
+  "Referti & Esami":           "1CJxcXPlNQn1MYHqK1XLHTKkD-afszSAb",
   "Certificati Medici":        "1CvbncUmpBvz57ex90zkhf8MKK_lKPCqm",
   "Buste Paga":                "1tX_wxHNsICi3HVWdQZH4mAG7dBAE8Qdl",
   "Documenti d'Identità":      "1zOKVoJNHm1g7sM4QtVRqLaMV2SHfyi-a",
   "Dichiarazione dei Redditi": "16CTZkDW_8O-hyKWTPbrvnuTfgq5e_7h0",
+  "Pagamenti & F24":           "15Mc1q4JgcNrmVNX2OpjoYghsD1I7u9tp",
   "Assicurazioni":             "1GLeCUEE4ppD7I8yq1vVdBqgqHU516L7h",
   "Bollette & Utenze":         "1lwIewc4TotMVkMb8GmoROfFsUkpmzyaL",
   "Banca & Finanze":           "1dclOLYrKCKl_SDGjByuMhz0bJS7JeCoV",
   "Contratti":                 "1CmnmpcHQqDYYxjKxHgOaPUGAPA6yy3RU",
+  "Veicoli & Patente":         "1qRt2fn35TYzjULx0CZvJSGVr8O2N-6f1",
   "Altro":                     "1cQ5ANxiVjxn5tjyJWqhjT9fNaxh8jdvb",
 };
 
@@ -485,10 +501,34 @@ let FOLDERS = JSON.parse(localStorage.getItem("archivio_folders") || "null") || 
 
 const SYSTEM_PROMPT = `Sei un assistente per l'archiviazione di documenti personali italiani.
 Analizza il documento e rispondi SOLO con JSON valido, senza backtick né testo extra.
-Categorie: Spese Sanitarie, Certificati Medici, Buste Paga, Documenti d'Identità, Dichiarazione dei Redditi, Assicurazioni, Bollette & Utenze, Banca & Finanze, Contratti, Altro.
-Persone: Luca Pasini (intestatario principale), Paolo Pasini (padre anziano), Andrea Manfredi (ex badante), Altro.
-Identifica la persona dal nome, cognome o codice fiscale presenti nel documento. Se non è determinabile usa "Altro".
-Formato nome: AAAA-MM_Categoria_Dettaglio_Importo (senza estensione, no spazi, usa _, importo solo se rilevante con €)
+
+Categorie disponibili:
+- Spese Sanitarie: fatture, scontrini farmacia, visite mediche a pagamento
+- Ricette Mediche: ricette del medico di base o specialisti
+- Referti & Esami: risultati di analisi, esami strumentali, referti ospedalieri
+- Certificati Medici: certificati di invalidità, legge 104, esenzioni, idoneità
+- Buste Paga: cedolini stipendio, prospetti paga
+- Documenti d'Identità: carta d'identità, passaporto, tessera sanitaria, codice fiscale
+- Dichiarazione dei Redditi: CU, 730, dichiarazioni redditi
+- Pagamenti & F24: modelli F24, ricevute pagamenti tasse e contributi
+- Assicurazioni: polizze, quietanze, attestati assicurativi
+- Bollette & Utenze: luce, gas, acqua, internet, telefono
+- Banca & Finanze: estratti conto, bonifici, investimenti, mutui
+- Contratti: contratti di lavoro, locazione, servizi, forniture
+- Veicoli & Patente: patente di guida, libretto auto, bollo, revisione
+- Altro: tutto ciò che non rientra nelle categorie precedenti
+
+Contesto famiglia:
+- Luca Pasini: intestatario principale dell'archivio
+- Paolo Pasini: padre anziano non autosufficiente
+- Andrea Manfredi: ex badante di Paolo Pasini (licenziato)
+- Maria: badante attuale di Paolo Pasini (cognome non noto)
+Identifica la persona dal nome, cognome o codice fiscale nel documento. Se non determinabile usa "Altro".
+
+Formato nomeFile (senza estensione, no spazi, usa _):
+- Categorie temporali (Spese Sanitarie, Ricette Mediche, Referti & Esami, Buste Paga, Dichiarazione dei Redditi, Pagamenti & F24, Bollette & Utenze, Banca & Finanze, Assicurazioni, Altro): AAAA-MM_NomePersona_Dettaglio — aggiungi importo con € solo per Spese Sanitarie, Bollette & Utenze, Banca & Finanze, Pagamenti & F24
+- Categorie atemporali (Documenti d'Identità, Certificati Medici, Contratti, Veicoli & Patente): NomePersona_Dettaglio (senza data)
+
 {"categoria":"...","persona":"...","nomeFile":"...","descrizione":"...","certezza":0}`;
 
 let accessToken = null;
@@ -936,9 +976,14 @@ document.getElementById("btnConfirmAll").addEventListener("click", async functio
       try {
         const categoryFolderId = FOLDERS[cat] || FOLDERS["Altro"];
         const personFolderId = await getOrCreateSubfolder(accessToken, categoryFolderId, person);
-        const year = (fileName.match(/^(\d{4})[-_]/) || [])[1] || String(new Date().getFullYear());
-        const yearFolderId = await getOrCreateYearFolder(accessToken, personFolderId, year);
-        await uploadToDrive(accessToken, fileName, f.mimeType, f.base64, yearFolderId);
+        let targetFolderId;
+        if (TEMPORAL_CATEGORIES.has(cat)) {
+          const year = (fileName.match(/^(\d{4})[-_]/) || [])[1] || String(new Date().getFullYear());
+          targetFolderId = await getOrCreateYearFolder(accessToken, personFolderId, year);
+        } else {
+          targetFolderId = personFolderId;
+        }
+        await uploadToDrive(accessToken, fileName, f.mimeType, f.base64, targetFolderId);
         const ok = document.createElement("div");
         ok.className = "bulk-item-ok";
         ok.textContent = "✓ Caricato";
@@ -1189,7 +1234,12 @@ document.getElementById("btnApplyReclass").addEventListener("click", async funct
 
       const newCatFolderId = FOLDERS[r.newCat] || FOLDERS["Altro"];
       const personFolderId = await getOrCreateSubfolder(accessToken, newCatFolderId, r.newPerson);
-      const yearFolderId = await getOrCreateYearFolder(accessToken, personFolderId, r.newYear);
+      let yearFolderId;
+      if (TEMPORAL_CATEGORIES.has(r.newCat)) {
+        yearFolderId = await getOrCreateYearFolder(accessToken, personFolderId, r.newYear);
+      } else {
+        yearFolderId = personFolderId;
+      }
 
       const params = r.file.parentId !== yearFolderId
         ? `?addParents=${yearFolderId}&removeParents=${r.file.parentId}`
