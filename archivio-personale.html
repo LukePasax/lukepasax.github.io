@@ -314,7 +314,7 @@
 <div class="card">
   <div class="header">
     <h1>Archivio Personale</h1>
-    <p>Analisi · Classificazione · Google Drive · <span style="color:#444">v10</span></p>
+    <p>Analisi · Classificazione · Google Drive · <span style="color:#444">v11</span></p>
   </div>
   <div class="body">
 
@@ -455,11 +455,15 @@ const FOLDERS = {
   "Altro":                     "1cQ5ANxiVjxn5tjyJWqhjT9fNaxh8jdvb",
 };
 
+const PERSONS = ["Luca Pasini", "Paolo Pasini", "Andrea Manfredi", "Altro"];
+
 const SYSTEM_PROMPT = `Sei un assistente per l'archiviazione di documenti personali italiani.
 Analizza il documento e rispondi SOLO con JSON valido, senza backtick né testo extra.
 Categorie: Spese Sanitarie, Certificati Medici, Buste Paga, Documenti d'Identità, Dichiarazione dei Redditi, Assicurazioni, Bollette & Utenze, Banca & Finanze, Contratti, Altro.
+Persone: Luca Pasini (intestatario principale), Paolo Pasini (padre anziano), Andrea Manfredi (ex badante), Altro.
+Identifica la persona dal nome, cognome o codice fiscale presenti nel documento. Se non è determinabile usa "Altro".
 Formato nome: AAAA-MM_Categoria_Dettaglio_Importo (senza estensione, no spazi, usa _, importo solo se rilevante con €)
-{"categoria":"...","nomeFile":"...","descrizione":"...","certezza":0}`;
+{"categoria":"...","persona":"...","nomeFile":"...","descrizione":"...","certezza":0}`;
 
 let accessToken = null;
 let ANTHROPIC_KEY = localStorage.getItem("anthropic_api_key") || "";
@@ -589,22 +593,25 @@ function getAccessToken() {
   });
 }
 
-async function getOrCreateYearFolder(token, parentId, year) {
-  const query = `mimeType='application/vnd.google-apps.folder' and name='${year}' and '${parentId}' in parents and trashed=false`;
+async function getOrCreateSubfolder(token, parentId, name) {
+  const query = `mimeType='application/vnd.google-apps.folder' and name='${name}' and '${parentId}' in parents and trashed=false`;
   const search = await fetch(
     `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id)`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
   const data = await search.json();
   if (data.files && data.files.length > 0) return data.files[0].id;
-
   const create = await fetch("https://www.googleapis.com/drive/v3/files?fields=id", {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ name: String(year), mimeType: "application/vnd.google-apps.folder", parents: [parentId] }),
+    body: JSON.stringify({ name, mimeType: "application/vnd.google-apps.folder", parents: [parentId] }),
   });
   const folder = await create.json();
   return folder.id;
+}
+
+async function getOrCreateYearFolder(token, parentId, year) {
+  return getOrCreateSubfolder(token, parentId, String(year));
 }
 
 async function uploadToDrive(token, fileName, mimeType, base64Data, folderId) {
@@ -676,6 +683,17 @@ function makeCatSelect(selectedCat) {
     const opt = document.createElement("option");
     opt.value = cat; opt.textContent = cat;
     if (cat === selectedCat) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  return sel;
+}
+
+function makePersonSelect(selectedPerson) {
+  const sel = document.createElement("select");
+  PERSONS.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p; opt.textContent = p;
+    if (p === selectedPerson) opt.selected = true;
     sel.appendChild(opt);
   });
   return sel;
@@ -780,10 +798,12 @@ document.getElementById("btnRun").addEventListener("click", async function() {
         const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
         const ext = f.file.name.split(".").pop() || (f.mimeType === "application/pdf" ? "pdf" : "jpg");
         f.cat = FOLDERS[parsed.categoria] ? parsed.categoria : "Altro";
+        f.person = PERSONS.includes(parsed.persona) ? parsed.persona : "Altro";
         f.name = parsed.nomeFile + "." + ext;
       } catch(e) {
         f.error = e.message;
         f.cat = "Altro";
+        f.person = "Altro";
         f.name = f.file.name;
       }
     }
@@ -806,6 +826,8 @@ document.getElementById("btnRun").addEventListener("click", async function() {
       const label = document.createElement("div");
       label.className = "bulk-item-name";
       label.textContent = f.file.name;
+      const personSel = makePersonSelect(f.person || "Altro");
+      personSel.dataset.idx = idx;
       item.appendChild(label);
       if (f.error) {
         const err = document.createElement("div");
@@ -814,6 +836,7 @@ document.getElementById("btnRun").addEventListener("click", async function() {
         item.appendChild(err);
       }
       item.appendChild(catSel);
+      item.appendChild(personSel);
       item.appendChild(nameInput);
       reviewList.appendChild(item);
     });
@@ -841,14 +864,17 @@ document.getElementById("btnConfirmAll").addEventListener("click", async functio
     for (let i = 0; i < fileQueue.length; i++) {
       const f = fileQueue[i];
       const item = items[i];
-      const cat = item.querySelector("select").value;
+      const selects = item.querySelectorAll("select");
+      const cat = selects[0].value;
+      const person = selects[1].value;
       const fileName = item.querySelector("input[type=text]").value.trim();
       this.textContent = `Caricamento ${i + 1}/${fileQueue.length}…`;
 
       try {
         const categoryFolderId = FOLDERS[cat] || FOLDERS["Altro"];
+        const personFolderId = await getOrCreateSubfolder(accessToken, categoryFolderId, person);
         const year = (fileName.match(/^(\d{4})[-_]/) || [])[1] || String(new Date().getFullYear());
-        const yearFolderId = await getOrCreateYearFolder(accessToken, categoryFolderId, year);
+        const yearFolderId = await getOrCreateYearFolder(accessToken, personFolderId, year);
         await uploadToDrive(accessToken, fileName, f.mimeType, f.base64, yearFolderId);
         const ok = document.createElement("div");
         ok.className = "bulk-item-ok";
@@ -942,14 +968,31 @@ async function listArchivioFiles(token, filter) {
 
   const files = [];
   for (const [catName, catId] of categoriesToScan) {
+    // Direct files in category (legacy, before person subfolders)
     const direct = await listDirectFiles(token, catId);
-    direct.forEach(f => files.push({ ...f, currentCat: catName, currentYear: null, parentId: catId }));
+    direct.forEach(f => files.push({ ...f, currentCat: catName, currentPerson: null, currentYear: null, parentId: catId }));
 
-    const yearFolders = await listSubfolders(token, catId);
-    for (const yf of yearFolders) {
-      if (filter.type === "year" && yf.name !== filter.year) continue;
-      const inYear = await listDirectFiles(token, yf.id);
-      inYear.forEach(f => files.push({ ...f, currentCat: catName, currentYear: yf.name, parentId: yf.id }));
+    const level1 = await listSubfolders(token, catId);
+    for (const sub1 of level1) {
+      // Could be a person folder or a year folder (legacy)
+      const isPerson = PERSONS.includes(sub1.name);
+      if (isPerson) {
+        const personName = sub1.name;
+        const yearFolders = await listSubfolders(token, sub1.id);
+        for (const yf of yearFolders) {
+          if (filter.type === "year" && yf.name !== filter.year) continue;
+          const inYear = await listDirectFiles(token, yf.id);
+          inYear.forEach(f => files.push({ ...f, currentCat: catName, currentPerson: personName, currentYear: yf.name, parentId: yf.id }));
+        }
+        // Direct files in person folder (without year)
+        const directInPerson = await listDirectFiles(token, sub1.id);
+        directInPerson.forEach(f => files.push({ ...f, currentCat: catName, currentPerson: personName, currentYear: null, parentId: sub1.id }));
+      } else {
+        // Legacy year folder without person
+        if (filter.type === "year" && sub1.name !== filter.year) continue;
+        const inYear = await listDirectFiles(token, sub1.id);
+        inYear.forEach(f => files.push({ ...f, currentCat: catName, currentPerson: null, currentYear: sub1.name, parentId: sub1.id }));
+      }
     }
   }
   return files;
@@ -1023,11 +1066,12 @@ document.getElementById("btnStartReclass").addEventListener("click", async funct
         const ext = f.name.split(".").pop();
         const newName = parsed.nomeFile + "." + ext;
         const newCat = FOLDERS[parsed.categoria] ? parsed.categoria : "Altro";
+        const newPerson = PERSONS.includes(parsed.persona) ? parsed.persona : "Altro";
         const newYear = (newName.match(/^(\d{4})[-_]/) || [])[1] || String(new Date().getFullYear());
-        const changed = newName !== f.name || newCat !== f.currentCat;
-        results.push({ file: f, newName, newCat, newYear, changed, error: null });
+        const changed = newName !== f.name || newCat !== f.currentCat || newPerson !== f.currentPerson;
+        results.push({ file: f, newName, newCat, newPerson, newYear, changed, error: null });
       } catch (e) {
-        results.push({ file: f, newName: null, newCat: null, newYear: null, changed: false, error: e.message });
+        results.push({ file: f, newName: null, newCat: null, newPerson: null, newYear: null, changed: false, error: e.message });
       }
     }
 
@@ -1043,9 +1087,11 @@ document.getElementById("btnStartReclass").addEventListener("click", async funct
       if (r.error) {
         item.innerHTML = `<div class="file-item-info"><div class="file-item-old">${r.file.name}</div><div class="file-item-err">⚠️ ${r.error}</div></div>`;
       } else if (!r.changed) {
-        item.innerHTML = `<input type="checkbox" data-idx="${idx}" disabled><div class="file-item-info"><div class="file-item-same">✓ ${r.file.name}</div><div style="font-size:10px;color:#3a5a3a">${r.file.currentCat}${r.file.currentYear ? "/" + r.file.currentYear : ""}</div></div>`;
+        const oldPath = [r.file.currentCat, r.file.currentPerson, r.file.currentYear].filter(Boolean).join("/");
+        item.innerHTML = `<input type="checkbox" data-idx="${idx}" disabled><div class="file-item-info"><div class="file-item-same">✓ ${r.file.name}</div><div style="font-size:10px;color:#3a5a3a">${oldPath}</div></div>`;
       } else {
-        item.innerHTML = `<input type="checkbox" data-idx="${idx}" checked><div class="file-item-info"><div class="file-item-old">${r.file.currentCat}${r.file.currentYear ? "/" + r.file.currentYear : ""}/${r.file.name}</div><div class="file-item-new">→ ${r.newCat}/${r.newYear}/${r.newName}</div></div>`;
+        const oldPath = [r.file.currentCat, r.file.currentPerson, r.file.currentYear].filter(Boolean).join("/");
+        item.innerHTML = `<input type="checkbox" data-idx="${idx}" checked><div class="file-item-info"><div class="file-item-old">${oldPath}/${r.file.name}</div><div class="file-item-new">→ ${r.newCat}/${r.newPerson}/${r.newYear}/${r.newName}</div></div>`;
       }
       list.appendChild(item);
     });
@@ -1079,7 +1125,8 @@ document.getElementById("btnApplyReclass").addEventListener("click", async funct
       this.textContent = `Applicando ${i + 1}/${checked.length}…`;
 
       const newCatFolderId = FOLDERS[r.newCat] || FOLDERS["Altro"];
-      const yearFolderId = await getOrCreateYearFolder(accessToken, newCatFolderId, r.newYear);
+      const personFolderId = await getOrCreateSubfolder(accessToken, newCatFolderId, r.newPerson);
+      const yearFolderId = await getOrCreateYearFolder(accessToken, personFolderId, r.newYear);
 
       const params = r.file.parentId !== yearFolderId
         ? `?addParents=${yearFolderId}&removeParents=${r.file.parentId}`
