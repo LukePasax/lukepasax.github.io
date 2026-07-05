@@ -1,1107 +1,1410 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Luca Pasini - Personal website</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Archivio Personale</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0e0e0e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Archivio" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  <!--
-    - favicon
-  -->
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/favicon/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon/favicon-16x16.png">
-  <link rel="manifest" href="./assets/favicon/site.webmanifest">
-  <link rel="mask-icon" href="./assets/favicon/safari-pinned-tab.svg" color="#5bbad5">
-  <link rel="shortcut icon" href="./assets/favicon/favicon.ico">
-  <meta name="msapplication-TileColor" content="#da532c">
-  <meta name="msapplication-config" content="./assets/favicon/browserconfig.xml">
-  <meta name="theme-color" content="#ffffff">
-  <!--
-    - custom css link
-  -->
-  <link rel="stylesheet" href="./assets/css/style.css">
+    :root {
+      --bg: #0e0e0e;
+      --card-bg: #161616;
+      --card-border: #2a2a2a;
+      --text-primary: #f0ece4;
+      --text-secondary: #888;
+      --text-muted: #555;
+      --accent: #c8b89a;
+      --accent-hover: #d4c8b0;
+      --accent-dark: #0e0e0e;
+      --input-bg: #0e0e0e;
+      --input-border: #333;
+      --divider: #222;
+      --dropzone-bg: #111;
+      --preview-bg: #111;
+      --result-bg: #0d1a0d;
+      --result-border: #2a4a2a;
+      --result-text: #7ec87e;
+      --result-label: #4a7a4a;
+      --result-done: #5a7a5a;
+      --error-bg: #1a0d0d;
+      --error-border: #4a2a2a;
+      --error-text: #c87e7e;
+      --bulk-bg: #111;
+      --bulk-border: #222;
+      --file-item-bg: #111;
+    }
 
-  <!--
-    - google font link
-  -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    body.light {
+      --bg: #f0ece4;
+      --card-bg: #ffffff;
+      --card-border: #ddd8cf;
+      --text-primary: #1a1610;
+      --text-secondary: #666;
+      --text-muted: #999;
+      --accent: #8b6b3d;
+      --accent-hover: #7a5c30;
+      --accent-dark: #ffffff;
+      --input-bg: #f8f5f0;
+      --input-border: #ccc8bf;
+      --divider: #e8e3db;
+      --dropzone-bg: #f8f5f0;
+      --preview-bg: #f0ece4;
+      --result-bg: #eef5ee;
+      --result-border: #9ec49e;
+      --result-text: #2d6b2d;
+      --result-label: #3a7a3a;
+      --result-done: #3a6b3a;
+      --error-bg: #fdf0f0;
+      --error-border: #e0a0a0;
+      --error-text: #a03030;
+      --bulk-bg: #f8f5f0;
+      --bulk-border: #ddd8cf;
+      --file-item-bg: #f8f5f0;
+    }
+
+    body {
+      background: var(--bg);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 24px 16px 48px;
+      transition: background .2s;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+
+    .header {
+      padding: 28px 28px 20px;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+    .header-text h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: var(--text-primary);
+      font-weight: 400;
+    }
+    .header-text p {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .theme-toggle {
+      background: none;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 6px 9px;
+      font-size: 16px;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-top: 2px;
+      line-height: 1;
+    }
+
+    .body { padding: 24px 28px 28px; }
+
+    .dropzone {
+      border: 1.5px dashed var(--input-border);
+      border-radius: 12px;
+      padding: 28px 20px 20px;
+      text-align: center;
+      background: var(--dropzone-bg);
+      transition: border-color .2s;
+    }
+    .dropzone-icon { font-size: 32px; margin-bottom: 10px; }
+    .dropzone-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px; }
+    .dropzone-text strong { color: var(--accent); display: block; font-size: 14px; margin-bottom: 4px; }
+
+    .file-btn {
+      display: inline-block;
+      background: var(--accent);
+      color: var(--accent-dark);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 12px 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .file-btn:hover { background: var(--accent-hover); }
+    #fileInput { display: none; }
+
+    .preview-wrap {
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      background: var(--preview-bg);
+      max-height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .preview-wrap img { width: 100%; max-height: 220px; object-fit: contain; }
+    .preview-pdf { padding: 24px; text-align: center; color: var(--text-secondary); font-size: 12px; }
+    .preview-pdf .pdf-icon { font-size: 40px; margin-bottom: 8px; }
+
+    .divider { height: 1px; background: var(--divider); margin: 20px 0; }
+
+    .step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; font-size: 12px; color: var(--text-muted); }
+    .step.active { color: var(--accent); }
+    .step.done { color: var(--result-done); }
+    .step-dot {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 1.5px solid currentColor;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; margin-top: 1px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin .8s linear infinite; display: inline-block; }
+
+    .result-box {
+      background: var(--result-bg);
+      border: 1px solid var(--result-border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .result-label { font-size: 10px; color: var(--result-label); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .result-cat { font-size: 15px; color: var(--result-text); font-family: 'DM Serif Display', serif; margin-bottom: 4px; }
+    .result-file { font-size: 11px; color: var(--result-done); word-break: break-all; }
+    .result-link {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 11px;
+      color: var(--result-text);
+      text-decoration: none;
+      border: 1px solid var(--result-border);
+      padding: 6px 14px;
+      border-radius: 6px;
+    }
+
+    .error-box {
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 12px;
+      color: var(--error-text);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all .2s;
+      margin-top: 12px;
+    }
+    .btn-primary { background: var(--accent); color: var(--accent-dark); font-weight: 500; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:disabled { background: var(--divider); color: var(--text-muted); cursor: not-allowed; }
+    .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--card-border); }
+
+    #steps, #result, #error, #actionBtns, #queuePreview, #bulkReview { display: none; }
+
+    .queue-list { margin-bottom: 14px; }
+    .queue-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      padding: 6px 0;
+      border-bottom: 1px solid var(--divider);
+    }
+    .queue-item:last-child { border-bottom: none; }
+    .queue-item-icon { font-size: 16px; flex-shrink: 0; }
+    .queue-item-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .queue-count { font-size: 12px; color: var(--accent); margin-bottom: 12px; }
+
+    .bulk-item {
+      background: var(--bulk-bg);
+      border: 1px solid var(--bulk-border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .bulk-item-name { font-size: 10px; color: var(--text-muted); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bulk-item select, .bulk-item input[type=text] {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 7px;
+      padding: 7px 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      outline: none;
+      margin-bottom: 6px;
+    }
+    .bulk-item-err { font-size: 10px; color: var(--error-text); margin-top: 4px; }
+    .bulk-item-ok { font-size: 10px; color: var(--result-done); margin-top: 6px; }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--card-border);
+      margin: 0 -28px 20px;
+      padding: 0 28px;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 10px 0;
+      margin-right: 20px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .reclass-filters { margin-bottom: 14px; }
+    .reclass-filter-row {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+    .reclass-filter-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .reclass-filter-row input[type=radio] { accent-color: var(--accent); }
+    .reclass-input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      padding: 9px 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      outline: none;
+      margin-bottom: 10px;
+    }
+
+    .reclass-progress { font-size: 12px; color: var(--text-secondary); margin: 16px 0 4px; }
+    .reclass-progress-bar {
+      height: 3px;
+      background: var(--divider);
+      border-radius: 2px;
+      margin-bottom: 16px;
+    }
+    .reclass-progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s; }
+
+    .file-item {
+      background: var(--file-item-bg);
+      border: 1px solid var(--bulk-border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+    .file-item input[type=checkbox] { accent-color: var(--accent); margin-top: 2px; flex-shrink: 0; }
+    .file-item-header { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+    .file-item-info { font-size: 11px; flex: 1; min-width: 0; }
+    .file-item-old { color: var(--text-muted); text-decoration: line-through; word-break: break-all; margin-bottom: 4px; }
+    .file-item-same { color: var(--result-done); }
+    .file-item-err { color: var(--error-text); font-size: 10px; }
+    .file-item select, .file-item input[type=text] {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 7px;
+      padding: 7px 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      outline: none;
+      margin-bottom: 6px;
+    }
+
+    .api-setup {
+      background: var(--dropzone-bg);
+      border: 1.5px dashed var(--input-border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .api-setup p { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5; }
+    .api-setup input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      outline: none;
+      margin-bottom: 10px;
+    }
+    .api-setup input:focus { border-color: var(--text-secondary); }
+    .api-key-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      padding: 0 2px;
+    }
+    .api-key-bar span { color: var(--result-done); }
+    .api-key-bar button {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      cursor: pointer;
+      padding: 0;
+    }
+    .api-key-bar button:hover { color: #888; }
+    .sync-bar {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      padding: 0 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sync-bar span { color: var(--result-done); }
+    .sync-bar button {
+      background: none; border: none; color: var(--text-secondary);
+      font-family: 'DM Mono', monospace; font-size: 10px;
+      cursor: pointer; padding: 0;
+    }
+    .sync-bar button:hover { color: var(--text-primary); }
+  </style>
 </head>
-
 <body>
 
-  <!--
-    - #MAIN
-  -->
+<div class="card">
+  <div class="header">
+    <div class="header-text">
+      <h1>Archivio Personale</h1>
+      <p>Analisi · Classificazione · Google Drive · v17</p>
+    </div>
+    <button class="theme-toggle" id="btnTheme">☀️</button>
+  </div>
+  <div class="body">
 
-  <main>
+    <!-- Tabs (shown only when key is configured) -->
+    <div class="tabs" id="tabs" style="display:none">
+      <button class="tab-btn active" id="tabArchivia" onclick="switchTab('archivia')">Archivia</button>
+      <button class="tab-btn" id="tabReclass" onclick="switchTab('reclass')">Riclassifica</button>
+    </div>
 
-    <!--
-      - #SIDEBAR
-    -->
+    <!-- API Key setup (shown only if not saved) -->
+    <div class="api-setup" id="apiSetup">
+      <p>Inserisci la tua <strong style="color:#c8b89a">Anthropic API key</strong> — viene salvata solo nel browser, mai caricata su server.</p>
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" />
+      <button class="btn btn-primary" id="btnSaveKey" style="margin-top:0">Salva e continua</button>
+    </div>
 
-    <aside class="sidebar" data-sidebar>
+    <!-- API key bar (shown when key is saved) -->
+    <div class="api-key-bar" id="apiKeyBar" style="display:none">
+      <span>✓ API key configurata</span>
+      <button id="btnChangeKey">Cambia</button>
+    </div>
 
-      <div class="sidebar-info">
+    <!-- Sync bar -->
+    <div class="sync-bar" id="syncBar" style="display:none">
+      <span id="syncStatus">✓ Cartelle sincronizzate</span>
+      <button id="btnSync">Sincronizza cartelle Drive</button>
+    </div>
 
-        <figure class="avatar-box">
-          <img src="./assets/images/my-avatar.jpg" alt="Luca Pasini" width="80" style="border-radius:20%">
-        </figure>
+    <!-- Drop zone -->
+    <div class="dropzone" id="dropzone" style="display:none">
+      <div class="dropzone-icon">📄</div>
+      <div class="dropzone-text">
+        <strong>Seleziona documento</strong>
+        Foto, scansione o PDF
+      </div>
+      <label class="file-btn" for="fileInput">Scegli file</label>
+      <input type="file" id="fileInput" accept="image/*,application/pdf" multiple />
+    </div>
 
-        <div class="info-content">
-          <h1 class="name" title="Luca Pasini">Luca Pasini</h1>
+    <!-- Queue preview (after file selection) -->
+    <div id="queuePreview">
+      <div class="queue-count" id="queueCount"></div>
+      <div class="queue-list" id="queueList"></div>
+    </div>
 
-          <p class="title">Software Engineer</p>
+    <!-- Steps -->
+    <div id="steps">
+      <div class="divider"></div>
+      <div class="step" id="s0"><div class="step-dot" id="d0">○</div><span id="s0label">Analisi documento</span></div>
+      <div class="step" id="s1"><div class="step-dot" id="d1">○</div>Classificazione</div>
+      <div class="step" id="s2"><div class="step-dot" id="d2">○</div>Caricamento su Drive</div>
+    </div>
+
+    <!-- Bulk review (all files, editable) -->
+    <div id="bulkReview">
+      <div class="divider"></div>
+      <div id="bulkReviewList"></div>
+      <button class="btn btn-primary" id="btnConfirmAll">Carica tutti su Drive</button>
+      <button class="btn btn-ghost" id="btnReset2">Cambia file</button>
+    </div>
+
+    <!-- Result -->
+    <div id="result">
+      <div class="divider"></div>
+      <div class="result-box">
+        <div class="result-label">Archiviato</div>
+        <div class="result-cat" id="rCat"></div>
+        <div class="result-file" id="rFile"></div>
+        <a class="result-link" id="rLink" target="_blank" style="display:none">Apri su Drive →</a>
+      </div>
+      <button class="btn btn-ghost" id="btnNew">Carica altri file</button>
+    </div>
+
+    <!-- Error -->
+    <div id="error">
+      <div class="divider"></div>
+      <div class="error-box" id="errorMsg"></div>
+    </div>
+
+    <!-- Buttons -->
+    <div id="actionBtns">
+      <button class="btn btn-primary" id="btnRun">Analizza e archivia</button>
+      <button class="btn btn-ghost" id="btnReset">Cambia file</button>
+    </div>
+
+    <!-- ── Reclassify panel ───────────────────────────────────────────────── -->
+    <div id="reclassPanel" style="display:none">
+
+      <div class="reclass-filters">
+        <div class="reclass-filter-row">
+          <label><input type="radio" name="rFilter" value="all" checked> Tutto</label>
+          <label><input type="radio" name="rFilter" value="cat"> Categoria</label>
+          <label><input type="radio" name="rFilter" value="year"> Anno</label>
         </div>
-
-        <button class="info_more-btn" data-sidebar-btn>
-          <span>Show Contacts</span>
-
-          <ion-icon name="chevron-down"></ion-icon>
-        </button>
-
+        <select id="rFilterCat" class="reclass-input" style="display:none"></select>
+        <input id="rFilterYear" type="text" class="reclass-input" placeholder="es. 2024" style="display:none" />
       </div>
 
-      <div class="sidebar-info_more">
+      <button class="btn btn-primary" id="btnStartReclass" style="margin-top:0">Avvia analisi</button>
 
-        <div class="separator"></div>
-
-        <ul class="contacts-list">
-
-          <li class="contact-item">
-
-            <div class="icon-box">
-              <ion-icon name="mail-outline"></ion-icon>
-            </div>
-
-            <div class="contact-info">
-              <p class="contact-title">Email</p>
-
-              <a href="mailto:dev@lucapasini.com" class="contact-link">dev@lucapasini.com</a>
-            </div>
-
-          </li>
-
-          <li class="contact-item">
-
-            <div class="icon-box">
-              <ion-icon name="phone-portrait-outline"></ion-icon>
-            </div>
-
-            <div class="contact-info">
-              <p class="contact-title">Phone</p>
-
-              <a href="tel:+393427198022" class="contact-link">+39 342 719 8022</a> 
-            </div>
-
-          </li>
-
-          <li class="contact-item">
-
-            <div class="icon-box">
-              <ion-icon name="calendar-outline"></ion-icon>
-            </div>
-
-            <div class="contact-info">
-              <p class="contact-title">Birthday</p>
-
-              <time datetime="1982-06-23">September 12, 2001</time>
-            </div>
-
-          </li>
-
-          <li class="contact-item">
-
-            <div class="icon-box">
-              <ion-icon name="location-outline"></ion-icon>
-            </div>
-
-            <div class="contact-info">
-              <p class="contact-title">Location</p>
-
-              <address>Cesena, Emilia-Romagna, Italy</address>
-            </div>
-
-          </li>
-
-        </ul>
-
-        <div class="separator"></div>
-
-        <ul class="social-list">
-
-          <li class="social-item">
-            <a href="https://www.linkedin.com/in/pasini-luca/" class="social-link">
-              <ion-icon name="logo-linkedin"></ion-icon>
-            </a>
-          </li>
-
-          <li class="social-item">
-            <a href="https://github.com/LukePasax" class="social-link">
-              <ion-icon name="logo-github"></ion-icon>
-            </a>
-          </li>
-
-          <li class="social-item">
-            <a href="https://www.instagram.com/luke_pasax/" class="social-link">
-              <ion-icon name="logo-instagram"></ion-icon>
-            </a>
-          </li>
-
-        </ul>
-
+      <div id="reclassProgress" style="display:none">
+        <div class="divider"></div>
+        <div class="reclass-progress" id="reclassProgressText">Analisi 0/0…</div>
+        <div class="reclass-progress-bar"><div class="reclass-progress-fill" id="reclassProgressFill" style="width:0%"></div></div>
       </div>
 
-    </aside>
-
-
-
-
-
-    <!--
-      - #main-content
-    -->
-
-    <div class="main-content">
-
-      <!--
-        - #NAVBAR
-      -->
-
-      <nav class="navbar">
-
-        <ul class="navbar-list">
-
-          <li class="navbar-item">
-            <button class="navbar-link  active" data-nav-link>About</button>
-          </li>
-
-          <li class="navbar-item">
-            <button class="navbar-link" data-nav-link>Resume</button>
-          </li>
-
-          <li class="navbar-item">
-            <button class="navbar-link" data-nav-link>Portfolio</button>
-          </li>
-
-          <!--
-          <li class="navbar-item">
-            <button class="navbar-link" data-nav-link>Blog</button>
-          </li>
-          -->
-
-          <li class="navbar-item">
-            <button class="navbar-link" data-nav-link>Contact</button>
-          </li>
-
-        </ul>
-
-      </nav>
-
-
-
-
-      <!--
-        - #ABOUT
-      -->
-      <article class="about active" data-page="about">
-
-        <header>
-          <h2 class="h2 article-title">About me</h2>
-        </header>
-
-        <section class="about-text">
-          <p>
-            Hello and welcome to my personal website! My name is Luca Pasini and I'm a passionate engineering student from Italy. From a young age, I've been fascinated by the world of game development and have always enjoyed tinkering with code and creating my own digital worlds.
-
-          As I've grown older, my passion for game development has only intensified. I'm constantly on the lookout for new technologies and techniques to improve my skills, and I love nothing more than collaborating with other developers to create exciting new games and experiences.
-
-          Outside of my studies, I enjoy exploring the great outdoors, watching movies, and spending time with my friends and family. I believe that a well-rounded approach to life is key to achieving success and happiness, and I strive to maintain a healthy balance between my personal and professional pursuits.
-
-          If you're interested in learning more about my work and experiences, please feel free to explore my website and don't hesitate to reach out if you have any questions or comments. Thanks for stopping by!
-          </p>
-
-          <p>
-          </p>
-        </section>
-
-
-        <!--
-          - service
-        
-        <section class="service">
-
-          <h3 class="h3 service-title">What i'm doing</h3>
-
-          <ul class="service-list">
-
-            <li class="service-item">
-
-              <div class="service-icon-box">
-                <img src="./assets/images/icon-design.svg
-                " alt="design icon" width="40">
-              </div>
-
-              <div class="service-content-box">
-                <h4 class="h4 service-item-title">Web design</h4>
-
-                <p class="service-item-text">
-                  The most modern and high-quality design made at a professional level.
-                </p>
-              </div>
-
-            </li>
-
-            <li class="service-item">
-
-              <div class="service-icon-box">
-                <img src="./assets/images/icon-dev.svg" alt="Web development icon" width="40">
-              </div>
-
-              <div class="service-content-box">
-                <h4 class="h4 service-item-title">Web development</h4>
-
-                <p class="service-item-text">
-                  High-quality development of sites at the professional level.
-                </p>
-              </div>
-
-            </li>
-
-            <li class="service-item">
-
-              <div class="service-icon-box">
-                <img src="./assets/images/icon-app.svg" alt="mobile app icon" width="40">
-              </div>
-
-              <div class="service-content-box">
-                <h4 class="h4 service-item-title">Mobile apps</h4>
-
-                <p class="service-item-text">
-                  Professional development of applications for iOS and Android.
-                </p>
-              </div>
-
-            </li>
-
-            <li class="service-item">
-
-              <div class="service-icon-box">
-                <img src="./assets/images/icon-photo.svg" alt="camera icon" width="40">
-              </div>
-
-              <div class="service-content-box">
-                <h4 class="h4 service-item-title">Photography</h4>
-
-                <p class="service-item-text">
-                  I make high-quality photos of any category at a professional level.
-                </p>
-              </div>
-
-            </li>
-
-          </ul>
-
-        </section> 
-        -->
-
-
-        <!--
-          - testimonials
-        
-        <section class="testimonials">
-
-          <h3 class="h3 testimonials-title">Testimonials</h3>
-
-          <ul class="testimonials-list has-scrollbar">
-
-            <li class="testimonials-item">
-              <div class="content-card" data-testimonials-item>
-
-                <figure class="testimonials-avatar-box">
-                  <img src="./assets/images/avatar-1.png" alt="Daniel lewis" width="60" data-testimonials-avatar>
-                </figure>
-
-                <h4 class="h4 testimonials-item-title" data-testimonials-title>Daniel lewis</h4>
-
-                <div class="testimonials-text" data-testimonials-text>
-                  <p>
-                   He is a young talented skilled crazy nerdy fella.
-                  </p>
-                </div>
-
-              </div>
-            </li>
-
-            <li class="testimonials-item">
-              <div class="content-card" data-testimonials-item>
-
-                <figure class="testimonials-avatar-box">
-                  <img src="./assets/images/avatar-2.png" alt="Jessica miller" width="60" data-testimonials-avatar>
-                </figure>
-
-                <h4 class="h4 testimonials-item-title" data-testimonials-title>Jessica miller</h4>
-
-                <div class="testimonials-text" data-testimonials-text>
-                  <p>
-                    Richard was hired to create a corporate identity. We were very pleased with the work done. She has a
-                    lot of experience
-                    and is very concerned about the needs of client. Lorem ipsum dolor sit amet, ullamcous cididt
-                    consectetur adipiscing
-                    elit, seds do et eiusmod tempor incididunt ut laborels dolore magnarels alia.
-                  </p>
-                </div>
-
-              </div>
-            </li>
-
-            <li class="testimonials-item">
-              <div class="content-card" data-testimonials-item>
-
-                <figure class="testimonials-avatar-box">
-                  <img src="./assets/images/avatar-3.png" alt="Emily evans" width="60" data-testimonials-avatar>
-                </figure>
-
-                <h4 class="h4 testimonials-item-title" data-testimonials-title>Emily evans</h4>
-
-                <div class="testimonials-text" data-testimonials-text>
-                  <p>
-                    Richard was hired to create a corporate identity. We were very pleased with the work done. She has a
-                    lot of experience
-                    and is very concerned about the needs of client. Lorem ipsum dolor sit amet, ullamcous cididt
-                    consectetur adipiscing
-                    elit, seds do et eiusmod tempor incididunt ut laborels dolore magnarels alia.
-                  </p>
-                </div>
-
-              </div>
-            </li>
-
-            <li class="testimonials-item">
-              <div class="content-card" data-testimonials-item>
-
-                <figure class="testimonials-avatar-box">
-                  <img src="./assets/images/avatar-4.png" alt="Henry william" width="60" data-testimonials-avatar>
-                </figure>
-
-                <h4 class="h4 testimonials-item-title" data-testimonials-title>Henry william</h4>
-
-                <div class="testimonials-text" data-testimonials-text>
-                  <p>
-                    Richard was hired to create a corporate identity. We were very pleased with the work done. She has a
-                    lot of experience
-                    and is very concerned about the needs of client. Lorem ipsum dolor sit amet, ullamcous cididt
-                    consectetur adipiscing
-                    elit, seds do et eiusmod tempor incididunt ut laborels dolore magnarels alia.
-                  </p>
-                </div>
-
-              </div>
-            </li>
-
-          </ul>
-
-        </section>
-        -->
-
-
-        <!--
-          - testimonials modal
-        -->
-
-        <div class="modal-container" data-modal-container>
-
-          <div class="overlay" data-overlay></div>
-
-          <section class="testimonials-modal">
-
-            <button class="modal-close-btn" data-modal-close-btn>
-              <ion-icon name="close-outline"></ion-icon>
-            </button>
-
-            <div class="modal-img-wrapper">
-              <figure class="modal-avatar-box">
-                <img src="./assets/images/avatar-1.png" alt="Daniel lewis" width="80" data-modal-img>
-              </figure>
-
-              <img src="./assets/images/icon-quote.svg" alt="quote icon">
-            </div>
-
-            <div class="modal-content">
-
-              <h4 class="h3 modal-title" data-modal-title>Daniel lewis</h4>
-
-              <time datetime="2021-06-14">14 June, 2021</time>
-
-              <div data-modal-text>
-                <p>
-                  Richard was hired to create a corporate identity. We were very pleased with the work done. She has a
-                  lot of experience
-                  and is very concerned about the needs of client. Lorem ipsum dolor sit amet, ullamcous cididt
-                  consectetur adipiscing
-                  elit, seds do et eiusmod tempor incididunt ut laborels dolore magnarels alia.
-                </p>
-              </div>
-
-            </div>
-
-          </section>
-
-        </div>
-
-
-        <!--
-          - clients
-        
-        <section class="clients">
-
-          <h3 class="h3 clients-title">Clients</h3>
-
-          <ul class="clients-list has-scrollbar">
-
-            <li class="clients-item">
-              <a href="#">
-                <img src="./assets/images/logo-1-color.png" alt="client logo">
-              </a>
-            </li>
-
-            <li class="clients-item">
-              <a href="#">
-                <img src="./assets/images/logo-2-color.png" alt="client logo">
-              </a>
-            </li>
-
-            <li class="clients-item">
-              <a href="#">
-                <img src="./assets/images/logo-3-color.png" alt="client logo">
-              </a>
-            </li>
-
-            <li class="clients-item">
-              <a href="#">
-                <img src="./assets/images/logo-4-color.png" alt="client logo">
-              </a>
-            </li>
-
-            <li class="clients-item">
-              <a href="#">
-                <img src="./assets/images/logo-5-color.png" alt="client logo">
-              </a>
-            </li>
-
-            <li class="clients-item">
-              <a href="#">
-                <img src="./assets/images/logo-6-color.png" alt="client logo">
-              </a>
-            </li>
-
-          </ul>
-
-        </section>
-        -->
-
-      </article>
-      
-
-
-
-
-
-      <!--
-        - #RESUME
-      -->
-
-      <article class="resume" data-page="resume">
-
-        <header>
-          <h2 class="h2 article-title">Resume</h2>
-        </header>
-
-        <section class="timeline">
-
-          <div class="title-wrapper">
-            <div class="icon-box">
-              <ion-icon name="book-outline"></ion-icon>
-            </div>
-
-            <h3 class="h3">Education</h3>
-          </div>
-
-          <ol class="timeline-list">
-
-            <li class="timeline-item">
-
-              <h4 class="h4 timeline-item-title">BSc Computer Science and Engineering @ University of Bologna</h4>
-
-              <span>2020 — Present</span>
-
-              <p class="timeline-text">
-              </p>
-
-            </li>
-
-            <li class="timeline-item">
-
-              <h4 class="h4 timeline-item-title">Scientific High School @ Liceo Righi Cesena</h4>
-
-              <span>2015 — 2020</span>
-
-              <p class="timeline-text">
-              </p>
-
-            </li>
-
-          </ol>
-
-        </section>
-
-        <section>
-            <a href="http://www.github.com/LukePasax"><img alt="TYP Top Language" style="margin:auto" width="50%" src="https://github-readme-stats.vercel.app/api/top-langs/?username=LukePasax&count_private=true&show_icons=true&layout=compact&theme=dark&langs_count=10&hide_border=true"/></a>
-        </section>
-        <!--
-        <section class="timeline">
-          <div class="title-wrapper">
-            <div class="icon-box">
-              <ion-icon name="book-outline"></ion-icon>
-            </div>
-
-            <h3 class="h3">Experience</h3>
-          </div>
-
-          <ol class="timeline-list">
-
-            <li class="timeline-item">
-
-              <h4 class="h4 timeline-item-title">Creative director</h4>
-
-              <span>2015 — Present</span>
-
-              <p class="timeline-text">
-                Nemo enim ipsam voluptatem blanditiis praesentium voluptum delenit atque corrupti, quos dolores et qvuas
-                molestias
-                exceptur.
-              </p>
-
-            </li>
-
-            <li class="timeline-item">
-
-              <h4 class="h4 timeline-item-title">Art director</h4>
-
-              <span>2013 — 2015</span>
-
-              <p class="timeline-text">
-                Nemo enims ipsam voluptatem, blanditiis praesentium voluptum delenit atque corrupti, quos dolores et
-                quas molestias
-                exceptur.
-              </p>
-
-            </li>
-
-            <li class="timeline-item">
-
-              <h4 class="h4 timeline-item-title">Web designer</h4>
-
-              <span>2010 — 2013</span>
-
-              <p class="timeline-text">
-                Nemo enims ipsam voluptatem, blanditiis praesentium voluptum delenit atque corrupti, quos dolores et
-                quas molestias
-                exceptur.
-              </p>
-
-            </li>
-
-          </ol>
-
-        </section>
-        -->
-
-        <!--
-        <section class="skill">
-
-          <h3 class="h3 skills-title">My skills</h3>
-
-          <ul class="skills-list content-card">
-
-            <li class="skills-item">
-
-              <div class="title-wrapper">
-                <h5 class="h5">Web design</h5>
-                <data value="80">80%</data>
-              </div>
-
-              <div class="skill-progress-bg">
-                <div class="skill-progress-fill" style="width: 80%;"></div>
-              </div>
-
-            </li>
-
-            <li class="skills-item">
-
-              <div class="title-wrapper">
-                <h5 class="h5">Graphic design</h5>
-                <data value="70">70%</data>
-              </div>
-
-              <div class="skill-progress-bg">
-                <div class="skill-progress-fill" style="width: 70%;"></div>
-              </div>
-
-            </li>
-
-            <li class="skills-item">
-
-              <div class="title-wrapper">
-                <h5 class="h5">Branding</h5>
-                <data value="90">90%</data>
-              </div>
-
-              <div class="skill-progress-bg">
-                <div class="skill-progress-fill" style="width: 90%;"></div>
-              </div>
-
-            </li>
-
-            <li class="skills-item">
-
-              <div class="title-wrapper">
-                <h5 class="h5">WordPress</h5>
-                <data value="50">50%</data>
-              </div>
-
-              <div class="skill-progress-bg">
-                <div class="skill-progress-fill" style="width: 50%;"></div>
-              </div>
-
-            </li>
-
-          </ul>
-
-        </section>
-        -->
-
-      </article>
-
-
-
-
-
-      <!--
-        - #PORTFOLIO
-      -->
-
-      <article class="portfolio" data-page="portfolio">
-
-        <header>
-          <h2 class="h2 article-title">Portfolio</h2>
-        </header>
-
-        <section class="projects">
-
-          <ul class="filter-list">
-
-            <li class="filter-item">
-                <button class="active" data-filter-btn>All</button>
-            </li>
-
-            <li class="filter-item">
-                <button data-filter-btn>Java</button>
-            </li>
-
-            <li class="filter-item">
-                <button data-filter-btn>C#</button>
-            </li>
-
-            <li class="filter-item">
-                <button data-filter-btn>Python</button>
-            </li>
-
-            <li class="filter-item">
-                <button data-filter-btn>Web</button>
-            </li>
-
-          </ul>
-
-          <div class="filter-select-box">
-
-            <button class="filter-select" data-select>
-
-              <div class="select-value" data-selecct-value>Select category</div>
-
-              <div class="select-icon">
-                <ion-icon name="chevron-down"></ion-icon>
-              </div>
-
-            </button>
-
-            <ul class="select-list">
-
-              <li class="select-item">
-                <button data-select-item>All</button>
-              </li>
-
-              <li class="select-item">
-                <button data-select-item>Java</button>
-              </li>
-
-              <li class="select-item">
-                <button data-select-item>C#</button>
-              </li>
-
-              <li class="select-item">
-                <button data-select-item>Python</button>
-              </li>
-
-              <li class="select-item">
-                <button data-select-item>Web</button>
-              </li>
-
-            </ul>
-
-          </div>
-
-          <ul class="project-list">
-
-            <li class="project-item  active" data-filter-item data-category="java">
-              <a href="https://github.com/LukePasax/Resplan">
-
-                <figure class="project-img">
-                  <div class="project-item-icon-box">
-                    <ion-icon name="eye-outline"></ion-icon>
-                  </div>
-
-                  <img src="./assets/images/resplan.png" alt="resplan" loading="lazy">
-                </figure>
-
-                <h3 class="project-title">Resplan</h3>
-
-                <p class="project-category">Java</p>
-
-              </a>
-            </li>
-
-            <li class="project-item  active" data-filter-item data-category="c#">
-              <a href="https://github.com/LukePasax/GameStart">
-
-                <figure class="project-img">
-                  <div class="project-item-icon-box">
-                    <ion-icon name="eye-outline"></ion-icon>
-                  </div>
-
-                  <img src="./assets/images/gamestart.png" alt="gamestart" loading="lazy">
-                </figure>
-
-                <h3 class="project-title">GameStart</h3>
-
-                <p class="project-category">C#</p>
-
-              </a>
-            </li>
-
-            <li class="project-item  active" data-filter-item data-category="python">
-              <a href="https://github.com/LukePasax/UDP-File-Transfer">
-
-                <figure class="project-img">
-                  <div class="project-item-icon-box">
-                    <ion-icon name="eye-outline"></ion-icon>
-                  </div>
-
-                  <img src="./assets/images/udp-file-transfer.png" alt="udp-file-transfer" loading="lazy">
-                </figure>
-
-                <h3 class="project-title">Udp-File-Transfer</h3>
-
-                <p class="project-category">Python</p>
-
-              </a>
-            </li>
-
-            <li class="project-item  active" data-filter-item data-category="web">
-              <a href="https://github.com/LukePasax/Snippex">
-
-                <figure class="project-img">
-                  <div class="project-item-icon-box">
-                    <ion-icon name="eye-outline"></ion-icon>
-                  </div>
-
-                  <img src="./assets/images/snippex.png" alt="snippex" loading="lazy">
-                </figure>
-
-                <h3 class="project-title">Snippex</h3>
-
-                <p class="project-category">Web</p>
-
-              </a>
-            </li>
-
-          </ul>
-
-        </section>
-
-      </article>
-
-
-
-
-
-      <!--
-        - #BLOG
-
-      <article class="blog" data-page="blog">
-
-        <header>
-          <h2 class="h2 article-title">Blog</h2>
-        </header>
-
-        <section class="blog-posts">
-
-          <ul class="blog-posts-list">
-
-            <li class="blog-post-item">
-              <a href="#">
-
-                <figure class="blog-banner-box">
-                  <img src="./assets/images/blog-1.jpg" alt="Design conferences in 2022" loading="lazy">
-                </figure>
-
-                <div class="blog-content">
-
-                  <div class="blog-meta">
-                    <p class="blog-category">Design</p>
-
-                    <span class="dot"></span>
-
-                    <time datetime="2022-02-23">Fab 23, 2022</time>
-                  </div>
-
-                  <h3 class="h3 blog-item-title">Design conferences in 2022</h3>
-
-                  <p class="blog-text">
-                    Veritatis et quasi architecto beatae vitae dicta sunt, explicabo.
-                  </p>
-
-                </div>
-
-              </a>
-            </li>
-
-            <li class="blog-post-item">
-              <a href="#">
-
-                <figure class="blog-banner-box">
-                  <img src="./assets/images/blog-2.jpg" alt="Best fonts every designer" loading="lazy">
-                </figure>
-
-                <div class="blog-content">
-
-                  <div class="blog-meta">
-                    <p class="blog-category">Design</p>
-
-                    <span class="dot"></span>
-
-                    <time datetime="2022-02-23">Fab 23, 2022</time>
-                  </div>
-
-                  <h3 class="h3 blog-item-title">Best fonts every designer</h3>
-
-                  <p class="blog-text">
-                    Sed ut perspiciatis, nam libero tempore, cum soluta nobis est eligendi.
-                  </p>
-
-                </div>
-
-              </a>
-            </li>
-
-            <li class="blog-post-item">
-              <a href="#">
-
-                <figure class="blog-banner-box">
-                  <img src="./assets/images/blog-3.jpg" alt="Design digest #80" loading="lazy">
-                </figure>
-
-                <div class="blog-content">
-
-                  <div class="blog-meta">
-                    <p class="blog-category">Design</p>
-
-                    <span class="dot"></span>
-
-                    <time datetime="2022-02-23">Fab 23, 2022</time>
-                  </div>
-
-                  <h3 class="h3 blog-item-title">Design digest #80</h3>
-
-                  <p class="blog-text">
-                    Excepteur sint occaecat cupidatat no proident, quis nostrum exercitationem ullam corporis suscipit.
-                  </p>
-
-                </div>
-
-              </a>
-            </li>
-
-            <li class="blog-post-item">
-              <a href="#">
-
-                <figure class="blog-banner-box">
-                  <img src="./assets/images/blog-4.jpg" alt="UI interactions of the week" loading="lazy">
-                </figure>
-
-                <div class="blog-content">
-
-                  <div class="blog-meta">
-                    <p class="blog-category">Design</p>
-
-                    <span class="dot"></span>
-
-                    <time datetime="2022-02-23">Fab 23, 2022</time>
-                  </div>
-
-                  <h3 class="h3 blog-item-title">UI interactions of the week</h3>
-
-                  <p class="blog-text">
-                    Enim ad minim veniam, consectetur adipiscing elit, quis nostrud exercitation ullamco laboris nisi.
-                  </p>
-
-                </div>
-
-              </a>
-            </li>
-
-            <li class="blog-post-item">
-              <a href="#">
-
-                <figure class="blog-banner-box">
-                  <img src="./assets/images/blog-5.jpg" alt="The forgotten art of spacing" loading="lazy">
-                </figure>
-
-                <div class="blog-content">
-
-                  <div class="blog-meta">
-                    <p class="blog-category">Design</p>
-
-                    <span class="dot"></span>
-
-                    <time datetime="2022-02-23">Fab 23, 2022</time>
-                  </div>
-
-                  <h3 class="h3 blog-item-title">The forgotten art of spacing</h3>
-
-                  <p class="blog-text">
-                    Maxime placeat, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                  </p>
-
-                </div>
-
-              </a>
-            </li>
-
-            <li class="blog-post-item">
-              <a href="#">
-
-                <figure class="blog-banner-box">
-                  <img src="./assets/images/blog-6.jpg" alt="Design digest #79" loading="lazy">
-                </figure>
-
-                <div class="blog-content">
-
-                  <div class="blog-meta">
-                    <p class="blog-category">Design</p>
-
-                    <span class="dot"></span>
-
-                    <time datetime="2022-02-23">Fab 23, 2022</time>
-                  </div>
-
-                  <h3 class="h3 blog-item-title">Design digest #79</h3>
-
-                  <p class="blog-text">
-                    Optio cumque nihil impedit uo minus quod maxime placeat, velit esse cillum.
-                  </p>
-
-                </div>
-
-              </a>
-            </li>
-
-          </ul>
-
-        </section>
-
-      </article>
-
-      -->
-
-
-
-
-      <!--
-        - #CONTACT
-      -->
-
-      <article class="contact" data-page="contact">
-
-        <header>
-          <h2 class="h2 article-title">Contact</h2>
-        </header>
-
-        <section class="mapbox" data-mapbox>
-          <figure>
-            <iframe
-              src="https://maps.google.com/maps?q=Cesena&t=&z=13&ie=UTF8&iwloc=&output=embed"
-              width="400" height="300" loading="lazy"></iframe>
-          </figure>
-        </section>
-
-        <section class="contact-form">
-
-          <h3 class="h3 form-title">Contact Form</h3>
-
-          <form action="#" class="form" data-form>
-
-            <div class="input-wrapper">
-              <input type="text" name="subject" class="form-input" placeholder="Subject" required data-form-input>
-            </div>
-
-            <textarea name="message" class="form-input" placeholder="Your Message" required data-form-input></textarea>
-
-            <button class="form-btn" type="submit" disabled data-form-btn>
-              <ion-icon name="paper-plane"></ion-icon>
-              <span>Send Message</span>
-            </button>
-
-          </form>
-
-        </section>
-
-      </article>
+      <div id="reclassResults" style="display:none">
+        <div class="divider"></div>
+        <div id="reclassFileList"></div>
+        <button class="btn btn-primary" id="btnApplyReclass">Applica selezionati</button>
+        <button class="btn btn-ghost" id="btnReclassReset">Nuova analisi</button>
+      </div>
+
+      <div id="reclassError" style="display:none">
+        <div class="divider"></div>
+        <div class="error-box" id="reclassErrorMsg"></div>
+      </div>
 
     </div>
 
-  </main>
+  </div>
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js");
+  }
+</script>
+<script>
+const CLIENT_ID = "587675640690-djilvb3nn1o446kctj6pvg9lu8drh1v2.apps.googleusercontent.com";
+const SCOPE = "https://www.googleapis.com/auth/drive";
 
 
+const PERSONS = ["Luca Pasini", "Paolo Pasini", "Andrea Manfredi", "Maria", "Altro"];
+const ROOT_FOLDER_ID = "1nl1khW2hu99KjgkIgJUHrhuUreXnMBxa";
 
+// Categories where year subfolder is created
+const TEMPORAL_CATEGORIES = new Set([
+  "Spese Sanitarie", "Ricette Mediche", "Referti & Esami", "Buste Paga",
+  "Dichiarazione dei Redditi", "Pagamenti & F24", "Bollette & Utenze",
+  "Banca & Finanze", "Assicurazioni", "Altro"
+]);
 
+// Categories where importo is relevant in filename
+const EXPENSE_CATEGORIES = new Set([
+  "Spese Sanitarie", "Bollette & Utenze", "Banca & Finanze", "Pagamenti & F24"
+]);
 
+const FOLDERS_DEFAULT = {
+  "Spese Sanitarie":           "1Qe67w_CBtnPd_Fr49_pk6zLXs2y0P9Tb",
+  "Ricette Mediche":           "1zg56kRVodA0-UoYaKuhfm1mlzTO67W5R",
+  "Referti & Esami":           "1CJxcXPlNQn1MYHqK1XLHTKkD-afszSAb",
+  "Certificati Medici":        "1CvbncUmpBvz57ex90zkhf8MKK_lKPCqm",
+  "Buste Paga":                "1tX_wxHNsICi3HVWdQZH4mAG7dBAE8Qdl",
+  "Documenti d'Identità":      "1zOKVoJNHm1g7sM4QtVRqLaMV2SHfyi-a",
+  "Dichiarazione dei Redditi": "16CTZkDW_8O-hyKWTPbrvnuTfgq5e_7h0",
+  "Pagamenti & F24":           "15Mc1q4JgcNrmVNX2OpjoYghsD1I7u9tp",
+  "Assicurazioni":             "1GLeCUEE4ppD7I8yq1vVdBqgqHU516L7h",
+  "Bollette & Utenze":         "1lwIewc4TotMVkMb8GmoROfFsUkpmzyaL",
+  "Banca & Finanze":           "1dclOLYrKCKl_SDGjByuMhz0bJS7JeCoV",
+  "Contratti":                 "1CmnmpcHQqDYYxjKxHgOaPUGAPA6yy3RU",
+  "Veicoli & Patente":         "1qRt2fn35TYzjULx0CZvJSGVr8O2N-6f1",
+  "Altro":                     "1cQ5ANxiVjxn5tjyJWqhjT9fNaxh8jdvb",
+};
 
-  <!--
-    - custom js link
-  -->
-  <script src="./assets/js/script.js"></script>
+let FOLDERS = JSON.parse(localStorage.getItem("archivio_folders") || "null") || { ...FOLDERS_DEFAULT };
 
-  <!--
-    - ionicon link
-  -->
-  <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
-  <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+const SYSTEM_PROMPT = `Sei un assistente per l'archiviazione di documenti personali italiani.
+Analizza il documento e rispondi SOLO con JSON valido, senza backtick né testo extra.
 
+Categorie disponibili:
+- Spese Sanitarie: fatture, scontrini farmacia, visite mediche a pagamento
+- Ricette Mediche: ricette del medico di base o specialisti
+- Referti & Esami: risultati di analisi, esami strumentali, referti ospedalieri
+- Certificati Medici: certificati di invalidità, legge 104, esenzioni, idoneità
+- Buste Paga: cedolini stipendio, prospetti paga
+- Documenti d'Identità: carta d'identità, passaporto, tessera sanitaria, codice fiscale
+- Dichiarazione dei Redditi: CU, 730, dichiarazioni redditi
+- Pagamenti & F24: modelli F24, ricevute pagamenti tasse e contributi
+- Assicurazioni: polizze, quietanze, attestati assicurativi
+- Bollette & Utenze: luce, gas, acqua, internet, telefono
+- Banca & Finanze: estratti conto, bonifici, investimenti, mutui
+- Contratti: contratti di lavoro, locazione, servizi, forniture
+- Veicoli & Patente: patente di guida, libretto auto, bollo, revisione
+- Altro: tutto ciò che non rientra nelle categorie precedenti
+
+Contesto famiglia:
+- Luca Pasini: intestatario principale dell'archivio
+- Paolo Pasini: padre anziano non autosufficiente
+- Andrea Manfredi: ex badante di Paolo Pasini (licenziato)
+- Maria: badante attuale di Paolo Pasini (cognome non noto)
+Identifica la persona dal nome, cognome o codice fiscale nel documento. Se non determinabile usa "Altro".
+
+Formato nomeFile (senza estensione, no spazi, usa _):
+- Categorie temporali (Spese Sanitarie, Ricette Mediche, Referti & Esami, Buste Paga, Dichiarazione dei Redditi, Pagamenti & F24, Bollette & Utenze, Banca & Finanze, Assicurazioni, Altro): AAAA-MM_NomePersona_Dettaglio — aggiungi importo con € solo per Spese Sanitarie, Bollette & Utenze, Banca & Finanze, Pagamenti & F24
+- Categorie atemporali (Documenti d'Identità, Certificati Medici, Contratti, Veicoli & Patente): NomePersona_Dettaglio (senza data)
+
+{"categoria":"...","persona":"...","nomeFile":"...","descrizione":"...","certezza":0}`;
+
+let accessToken = null;
+let ANTHROPIC_KEY = localStorage.getItem("anthropic_api_key") || "";
+
+// ── API Key UI ────────────────────────────────────────────────────────────────
+
+function initKeyUI() {
+  if (ANTHROPIC_KEY) {
+    document.getElementById("apiSetup").style.display = "none";
+    document.getElementById("apiKeyBar").style.display = "flex";
+    document.getElementById("syncBar").style.display = "flex";
+    document.getElementById("tabs").style.display = "flex";
+    document.getElementById("dropzone").style.display = "block";
+    const saved = localStorage.getItem("archivio_folders");
+    document.getElementById("syncStatus").textContent = saved
+      ? "✓ Cartelle sincronizzate"
+      : "⚠ Usando cartelle di default";
+  } else {
+    document.getElementById("apiSetup").style.display = "block";
+    document.getElementById("apiKeyBar").style.display = "none";
+    document.getElementById("syncBar").style.display = "none";
+    document.getElementById("tabs").style.display = "none";
+    document.getElementById("dropzone").style.display = "none";
+  }
+}
+
+async function syncFolders() {
+  const status = document.getElementById("syncStatus");
+  status.textContent = "Sincronizzazione…";
+  try {
+    if (!accessToken) accessToken = await getAccessToken();
+    const q = `'${ROOT_FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    const res = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const data = await res.json();
+    const newFolders = {};
+    (data.files || []).forEach(f => { newFolders[f.name] = f.id; });
+    // Merge: keep defaults for folders not found on Drive
+    Object.assign(newFolders, Object.fromEntries(
+      Object.entries(FOLDERS_DEFAULT).filter(([k]) => !newFolders[k])
+    ));
+    Object.assign(FOLDERS, newFolders);
+    // Remove keys no longer on Drive (except defaults)
+    Object.keys(FOLDERS).forEach(k => {
+      if (!newFolders[k] && !FOLDERS_DEFAULT[k]) delete FOLDERS[k];
+    });
+    localStorage.setItem("archivio_folders", JSON.stringify(FOLDERS));
+    status.textContent = `✓ ${Object.keys(FOLDERS).length} cartelle sincronizzate`;
+  } catch(e) {
+    status.textContent = "⚠ Errore sincronizzazione";
+  }
+}
+
+document.getElementById("btnSync").addEventListener("click", syncFolders);
+
+function switchTab(tab) {
+  const isArchivia = tab === "archivia";
+  document.getElementById("tabArchivia").className = "tab-btn" + (isArchivia ? " active" : "");
+  document.getElementById("tabReclass").className = "tab-btn" + (!isArchivia ? " active" : "");
+
+  // Archivia elements
+  ["dropzone","preview","steps","review","result","error","actionBtns"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
+  document.getElementById("reclassPanel").style.display = "none";
+
+  if (isArchivia) {
+    resetUI();
+  } else {
+    document.getElementById("reclassPanel").style.display = "block";
+  }
+}
+
+document.getElementById("btnSaveKey").addEventListener("click", function() {
+  const val = document.getElementById("apiKeyInput").value.trim();
+  if (!val.startsWith("sk-ant-")) { alert("Chiave non valida — deve iniziare con sk-ant-"); return; }
+  ANTHROPIC_KEY = val;
+  localStorage.setItem("anthropic_api_key", val);
+  document.getElementById("apiKeyInput").value = "";
+  initKeyUI();
+});
+
+document.getElementById("btnChangeKey").addEventListener("click", function() {
+  ANTHROPIC_KEY = "";
+  localStorage.removeItem("anthropic_api_key");
+  initKeyUI();
+});
+
+initKeyUI();
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(",")[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function compressImage(file, maxPx = 1600, quality = 0.82) {
+  return new Promise((res) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (Math.max(width, height) > maxPx) {
+        const ratio = maxPx / Math.max(width, height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width; canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      canvas.toBlob(blob => res(blob || file), "image/jpeg", quality);
+    };
+    img.onerror = () => res(file);
+    img.src = url;
+  });
+}
+
+async function pdfToImages(base64) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+  const images = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const viewport = page.getViewport({ scale: 1.5 });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+    images.push(dataUrl.split(",")[1]);
+  }
+  return images;
+}
+
+function getAccessToken() {
+  return new Promise((resolve, reject) => {
+    const wait = (n) => {
+      if (n <= 0) { reject(new Error("Google Identity Services non caricato")); return; }
+      if (window.google?.accounts?.oauth2) {
+        const client = window.google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPE,
+          callback: (resp) => resp.error ? reject(new Error(resp.error)) : resolve(resp.access_token),
+        });
+        client.requestAccessToken({ prompt: "" });
+      } else {
+        setTimeout(() => wait(n - 1), 300);
+      }
+    };
+    wait(20);
+  });
+}
+
+async function getOrCreateSubfolder(token, parentId, name) {
+  const query = `mimeType='application/vnd.google-apps.folder' and name='${name}' and '${parentId}' in parents and trashed=false`;
+  const search = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id)`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const data = await search.json();
+  if (data.files && data.files.length > 0) return data.files[0].id;
+  const create = await fetch("https://www.googleapis.com/drive/v3/files?fields=id", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ name, mimeType: "application/vnd.google-apps.folder", parents: [parentId] }),
+  });
+  const folder = await create.json();
+  return folder.id;
+}
+
+async function getOrCreateYearFolder(token, parentId, year) {
+  return getOrCreateSubfolder(token, parentId, String(year));
+}
+
+async function uploadToDrive(token, fileName, mimeType, base64Data, folderId) {
+  const metadata = { name: fileName, parents: [folderId] };
+  const boundary = "archivio_boundary";
+  const body = [
+    `--${boundary}`,
+    "Content-Type: application/json; charset=UTF-8",
+    "",
+    JSON.stringify(metadata),
+    `--${boundary}`,
+    `Content-Type: ${mimeType}`,
+    "Content-Transfer-Encoding: base64",
+    "",
+    base64Data,
+    `--${boundary}--`,
+  ].join("\r\n");
+
+  const res = await fetch(
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": `multipart/related; boundary=${boundary}`,
+      },
+      body,
+    }
+  );
+  if (!res.ok) throw new Error(`Drive upload error: ${res.status}`);
+  return res.json();
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+
+function setStep(i, state) {
+  const s = document.getElementById("s" + i);
+  const d = document.getElementById("d" + i);
+  s.className = "step" + (state === "active" ? " active" : state === "done" ? " done" : "");
+  d.innerHTML = state === "done" ? "✓" : state === "active" ? '<span class="spin">◌</span>' : "○";
+}
+
+function showError(msg) {
+  document.getElementById("error").style.display = "block";
+  document.getElementById("errorMsg").textContent = "⚠️ " + msg;
+  document.getElementById("btnRun").style.display = "block";
+  document.getElementById("btnRun").disabled = false;
+  document.getElementById("btnRun").textContent = "Riprova";
+}
+
+function resetUI() {
+  fileQueue = [];
+  document.getElementById("fileInput").value = "";
+  document.getElementById("dropzone").style.display = "block";
+  document.getElementById("actionBtns").style.display = "none";
+  document.getElementById("queuePreview").style.display = "none";
+  document.getElementById("steps").style.display = "none";
+  document.getElementById("bulkReview").style.display = "none";
+  document.getElementById("result").style.display = "none";
+  document.getElementById("error").style.display = "none";
+  document.getElementById("btnRun").style.display = "block";
+  document.getElementById("btnRun").disabled = false;
+  document.getElementById("btnRun").textContent = "Analizza e archivia";
+}
+
+function makeCatSelect(selectedCat) {
+  const sel = document.createElement("select");
+  Object.keys(FOLDERS).forEach(cat => {
+    const opt = document.createElement("option");
+    opt.value = cat; opt.textContent = cat;
+    if (cat === selectedCat) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  return sel;
+}
+
+function makePersonSelect(selectedPerson) {
+  const sel = document.createElement("select");
+  PERSONS.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p; opt.textContent = p;
+    if (p === selectedPerson) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  return sel;
+}
+
+// ── File selection ────────────────────────────────────────────────────────────
+
+let fileQueue = []; // { file, base64, mimeType, claudeContent, cat, name, error }
+
+document.getElementById("fileInput").addEventListener("change", function(e) {
+  const files = [...(e.target.files || [])];
+  if (!files.length) return;
+  fileQueue = files.map(f => ({ file: f, base64: null, mimeType: null, claudeContent: null, cat: null, name: null, error: null }));
+
+  document.getElementById("queueCount").textContent = files.length === 1 ? "1 file selezionato" : `${files.length} file selezionati`;
+  const list = document.getElementById("queueList");
+  list.innerHTML = "";
+  files.forEach(f => {
+    const item = document.createElement("div");
+    item.className = "queue-item";
+    const icon = f.type === "application/pdf" ? "📋" : "🖼️";
+    item.innerHTML = `<span class="queue-item-icon">${icon}</span><span class="queue-item-name">${f.name}</span>`;
+    list.appendChild(item);
+  });
+
+  document.getElementById("dropzone").style.display = "none";
+  document.getElementById("queuePreview").style.display = "block";
+  document.getElementById("actionBtns").style.display = "block";
+  document.getElementById("error").style.display = "none";
+  document.getElementById("result").style.display = "none";
+  document.getElementById("bulkReview").style.display = "none";
+  document.getElementById("steps").style.display = "none";
+  document.getElementById("btnRun").textContent = files.length === 1 ? "Analizza e archivia" : `Analizza ${files.length} file`;
+  document.getElementById("btnRun").disabled = false;
+});
+
+// ── Run (analisi Claude su tutti i file) ─────────────────────────────────────
+
+async function prepareFile(f) {
+  if (f.file.type.startsWith("image/")) {
+    const compressed = await compressImage(f.file);
+    f.base64 = await fileToBase64(compressed);
+    f.mimeType = "image/jpeg";
+    f.claudeContent = [
+      { type: "image", source: { type: "base64", media_type: "image/jpeg", data: f.base64 } },
+      { type: "text", text: "Analizza e classifica questo documento." }
+    ];
+  } else {
+    f.base64 = await fileToBase64(f.file);
+    f.mimeType = "application/pdf";
+    const pages = await pdfToImages(f.base64);
+    f.claudeContent = [
+      ...pages.map(p => ({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: p } })),
+      { type: "text", text: "Analizza e classifica questo documento." }
+    ];
+  }
+}
+
+document.getElementById("btnRun").addEventListener("click", async function() {
+  if (!fileQueue.length) return;
+  this.disabled = true;
+  document.getElementById("error").style.display = "none";
+  document.getElementById("result").style.display = "none";
+  document.getElementById("bulkReview").style.display = "none";
+  document.getElementById("steps").style.display = "block";
+  setStep(0, "active"); setStep(1, ""); setStep(2, "");
+
+  try {
+    for (let i = 0; i < fileQueue.length; i++) {
+      const f = fileQueue[i];
+      document.getElementById("s0label").textContent = fileQueue.length > 1
+        ? `Preparazione ${i + 1}/${fileQueue.length}`
+        : "Analisi documento";
+      await prepareFile(f);
+    }
+    setStep(0, "done"); setStep(1, "active");
+
+    for (let i = 0; i < fileQueue.length; i++) {
+      const f = fileQueue[i];
+      document.getElementById("s0label").textContent = fileQueue.length > 1
+        ? `Classificazione ${i + 1}/${fileQueue.length}`
+        : "Classificazione";
+      try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": ANTHROPIC_KEY,
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-direct-browser-access": "true",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-6",
+            max_tokens: 300,
+            system: SYSTEM_PROMPT,
+            messages: [{ role: "user", content: f.claudeContent }],
+          }),
+        });
+        if (!res.ok) throw new Error("Claude API: " + res.status);
+        const data = await res.json();
+        const raw = data.content?.find(b => b.type === "text")?.text || "";
+        const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
+        const ext = f.file.name.split(".").pop() || (f.mimeType === "application/pdf" ? "pdf" : "jpg");
+        f.cat = FOLDERS[parsed.categoria] ? parsed.categoria : "Altro";
+        f.person = PERSONS.includes(parsed.persona) ? parsed.persona : "Altro";
+        f.name = parsed.nomeFile + "." + ext;
+      } catch(e) {
+        f.error = e.message;
+        f.cat = "Altro";
+        f.person = "Altro";
+        f.name = f.file.name;
+      }
+    }
+
+    setStep(1, "done");
+    document.getElementById("steps").style.display = "none";
+    document.getElementById("actionBtns").style.display = "none";
+    document.getElementById("queuePreview").style.display = "none";
+
+    // Build bulk review
+    const reviewList = document.getElementById("bulkReviewList");
+    reviewList.innerHTML = "";
+    fileQueue.forEach((f, idx) => {
+      const item = document.createElement("div");
+      item.className = "bulk-item";
+      const nameInput = document.createElement("input");
+      nameInput.type = "text"; nameInput.value = f.name; nameInput.dataset.idx = idx;
+      const catSel = makeCatSelect(f.cat);
+      catSel.dataset.idx = idx;
+      const label = document.createElement("div");
+      label.className = "bulk-item-name";
+      label.textContent = f.file.name;
+      const personSel = makePersonSelect(f.person || "Altro");
+      personSel.dataset.idx = idx;
+      item.appendChild(label);
+      if (f.error) {
+        const err = document.createElement("div");
+        err.className = "bulk-item-err";
+        err.textContent = "⚠️ Classificazione fallita — puoi correggere manualmente";
+        item.appendChild(err);
+      }
+      item.appendChild(catSel);
+      item.appendChild(personSel);
+      item.appendChild(nameInput);
+      reviewList.appendChild(item);
+    });
+
+    document.getElementById("bulkReview").style.display = "block";
+
+  } catch(e) {
+    showError(e.message);
+    this.disabled = false;
+  }
+});
+
+// ── Confirm all (caricamento Drive) ──────────────────────────────────────────
+
+document.getElementById("btnConfirmAll").addEventListener("click", async function() {
+  this.disabled = true;
+  document.getElementById("error").style.display = "none";
+
+  const items = document.querySelectorAll("#bulkReviewList .bulk-item");
+  let uploaded = 0, failed = 0;
+
+  try {
+    if (!accessToken) accessToken = await getAccessToken();
+
+    for (let i = 0; i < fileQueue.length; i++) {
+      const f = fileQueue[i];
+      const item = items[i];
+      const selects = item.querySelectorAll("select");
+      const cat = selects[0].value;
+      const person = selects[1].value;
+      const fileName = item.querySelector("input[type=text]").value.trim();
+      this.textContent = `Caricamento ${i + 1}/${fileQueue.length}…`;
+
+      try {
+        const categoryFolderId = FOLDERS[cat] || FOLDERS["Altro"];
+        const personFolderId = await getOrCreateSubfolder(accessToken, categoryFolderId, person);
+        let targetFolderId;
+        if (TEMPORAL_CATEGORIES.has(cat)) {
+          const year = (fileName.match(/^(\d{4})[-_]/) || [])[1] || String(new Date().getFullYear());
+          targetFolderId = await getOrCreateYearFolder(accessToken, personFolderId, year);
+        } else {
+          targetFolderId = personFolderId;
+        }
+        await uploadToDrive(accessToken, fileName, f.mimeType, f.base64, targetFolderId);
+        const ok = document.createElement("div");
+        ok.className = "bulk-item-ok";
+        ok.textContent = "✓ Caricato";
+        item.appendChild(ok);
+        uploaded++;
+      } catch(e) {
+        const err = document.createElement("div");
+        err.className = "bulk-item-err";
+        err.textContent = "⚠️ Errore: " + e.message;
+        item.appendChild(err);
+        failed++;
+      }
+    }
+
+    document.getElementById("rCat").textContent = `📁 ${uploaded} file caricati${failed ? `, ${failed} errori` : ""}`;
+    document.getElementById("rFile").textContent = "";
+    document.getElementById("rLink").style.display = "none";
+    document.getElementById("bulkReview").style.display = "none";
+    document.getElementById("result").style.display = "block";
+
+  } catch(e) {
+    this.disabled = false;
+    this.textContent = "Carica tutti su Drive";
+    showError(e.message);
+  }
+});
+
+// ── Reset ─────────────────────────────────────────────────────────────────────
+
+document.getElementById("btnReset").addEventListener("click", resetUI);
+document.getElementById("btnReset2").addEventListener("click", resetUI);
+document.getElementById("btnNew").addEventListener("click", resetUI);
+
+// ── Reclassify helpers ────────────────────────────────────────────────────────
+
+async function driveGet(token, url) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, signal: ctrl.signal });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Drive API ${res.status}${body ? ": " + body.slice(0, 120) : ""}`);
+    }
+    return res.json();
+  } catch(e) {
+    if (e.name === "AbortError") throw new Error("Timeout Drive API — riprova");
+    throw e;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+async function listDirectFiles(token, folderId) {
+  const q = `'${folderId}' in parents and mimeType!='application/vnd.google-apps.folder' and trashed=false`;
+  const data = await driveGet(token, `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType,parents)`);
+  return data.files || [];
+}
+
+async function listSubfolders(token, folderId) {
+  const q = `'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+  const data = await driveGet(token, `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`);
+  return data.files || [];
+}
+
+async function downloadBase64(token, fileId) {
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const blob = await res.blob();
+  return new Promise(resolve => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result.split(",")[1]);
+    r.readAsDataURL(blob);
+  });
+}
+
+async function claudeClassify(claudeContent) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": ANTHROPIC_KEY,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 300,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: claudeContent }],
+    }),
+  });
+  if (!res.ok) throw new Error("Claude API: " + res.status);
+  const data = await res.json();
+  const raw = data.content?.find(b => b.type === "text")?.text || "";
+  return JSON.parse(raw.replace(/```json|```/g, "").trim());
+}
+
+async function listArchivioFiles(token, filter) {
+  let categoriesToScan = Object.entries(FOLDERS);
+  if (filter.type === "cat") categoriesToScan = [[filter.cat, FOLDERS[filter.cat]]];
+
+  const files = [];
+  for (const [catName, catId] of categoriesToScan) {
+    // Direct files in category (legacy, before person subfolders)
+    const direct = await listDirectFiles(token, catId);
+    direct.forEach(f => files.push({ ...f, currentCat: catName, currentPerson: null, currentYear: null, parentId: catId }));
+
+    const level1 = await listSubfolders(token, catId);
+    for (const sub1 of level1) {
+      // Could be a person folder or a year folder (legacy)
+      const isPerson = PERSONS.includes(sub1.name);
+      if (isPerson) {
+        const personName = sub1.name;
+        const yearFolders = await listSubfolders(token, sub1.id);
+        for (const yf of yearFolders) {
+          if (filter.type === "year" && yf.name !== filter.year) continue;
+          const inYear = await listDirectFiles(token, yf.id);
+          inYear.forEach(f => files.push({ ...f, currentCat: catName, currentPerson: personName, currentYear: yf.name, parentId: yf.id }));
+        }
+        // Direct files in person folder (without year)
+        const directInPerson = await listDirectFiles(token, sub1.id);
+        directInPerson.forEach(f => files.push({ ...f, currentCat: catName, currentPerson: personName, currentYear: null, parentId: sub1.id }));
+      } else {
+        // Legacy year folder without person
+        if (filter.type === "year" && sub1.name !== filter.year) continue;
+        const inYear = await listDirectFiles(token, sub1.id);
+        inYear.forEach(f => files.push({ ...f, currentCat: catName, currentPerson: null, currentYear: sub1.name, parentId: sub1.id }));
+      }
+    }
+  }
+  return files;
+}
+
+// ── Reclassify UI ─────────────────────────────────────────────────────────────
+
+// Populate filter dropdowns
+const rFilterCat = document.getElementById("rFilterCat");
+Object.keys(FOLDERS).forEach(cat => {
+  const opt = document.createElement("option");
+  opt.value = cat; opt.textContent = cat;
+  rFilterCat.appendChild(opt);
+});
+
+document.querySelectorAll("input[name=rFilter]").forEach(radio => {
+  radio.addEventListener("change", function() {
+    document.getElementById("rFilterCat").style.display = this.value === "cat" ? "block" : "none";
+    document.getElementById("rFilterYear").style.display = this.value === "year" ? "block" : "none";
+  });
+});
+
+document.getElementById("btnStartReclass").addEventListener("click", async function() {
+  const filterType = document.querySelector("input[name=rFilter]:checked").value;
+  const filter = {
+    type: filterType,
+    cat: document.getElementById("rFilterCat").value,
+    year: document.getElementById("rFilterYear").value.trim(),
+  };
+
+  if (filter.type === "year" && !filter.year) { alert("Inserisci un anno."); return; }
+
+  this.disabled = true;
+  document.getElementById("reclassProgress").style.display = "block";
+  document.getElementById("reclassResults").style.display = "none";
+  document.getElementById("reclassError").style.display = "none";
+
+  try {
+    if (!accessToken) accessToken = await getAccessToken();
+    document.getElementById("reclassProgressText").textContent = "Recupero lista file da Drive…";
+    const files = await listArchivioFiles(accessToken, filter);
+
+    if (files.length === 0) {
+      document.getElementById("reclassProgressText").textContent = "Nessun file trovato nelle cartelle Drive.";
+      this.disabled = false;
+      return;
+    }
+    document.getElementById("reclassProgressText").textContent = `Trovati ${files.length} file — avvio analisi…`;
+
+    const results = [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      document.getElementById("reclassProgressText").textContent = `Analisi ${i + 1}/${files.length}: ${f.name}`;
+      document.getElementById("reclassProgressFill").style.width = `${Math.round((i / files.length) * 100)}%`;
+
+      try {
+        const b64 = await downloadBase64(accessToken, f.id);
+        const isPdf = f.mimeType === "application/pdf";
+        let claudeContent;
+        if (isPdf) {
+          const pages = await pdfToImages(b64);
+          claudeContent = [
+            ...pages.map(p => ({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: p } })),
+            { type: "text", text: "Analizza e classifica questo documento." }
+          ];
+        } else {
+          claudeContent = [
+            { type: "image", source: { type: "base64", media_type: "image/jpeg", data: b64 } },
+            { type: "text", text: "Analizza e classifica questo documento." }
+          ];
+        }
+        const parsed = await claudeClassify(claudeContent);
+        const ext = f.name.split(".").pop();
+        const newName = parsed.nomeFile + "." + ext;
+        const newCat = FOLDERS[parsed.categoria] ? parsed.categoria : "Altro";
+        const newPerson = PERSONS.includes(parsed.persona) ? parsed.persona : "Altro";
+        const newYear = (newName.match(/^(\d{4})[-_]/) || [])[1] || String(new Date().getFullYear());
+        const changed = newName !== f.name || newCat !== f.currentCat || newPerson !== f.currentPerson;
+        results.push({ file: f, newName, newCat, newPerson, newYear, changed, error: null });
+      } catch (e) {
+        results.push({ file: f, newName: null, newCat: null, newPerson: null, newYear: null, changed: false, error: e.message });
+      }
+    }
+
+    document.getElementById("reclassProgressText").textContent = `Analisi completata — ${files.length} file`;
+    document.getElementById("reclassProgressFill").style.width = "100%";
+
+    // Render results
+    const list = document.getElementById("reclassFileList");
+    list.innerHTML = "";
+    results.forEach((r, idx) => {
+      const item = document.createElement("div");
+      item.className = "file-item";
+      if (r.error) {
+        item.innerHTML = `<div class="file-item-info"><div class="file-item-old">${r.file.name}</div><div class="file-item-err">⚠️ ${r.error}</div></div>`;
+      } else if (!r.changed) {
+        const oldPath = [r.file.currentCat, r.file.currentPerson, r.file.currentYear].filter(Boolean).join("/");
+        item.innerHTML = `<input type="checkbox" data-idx="${idx}" disabled><div class="file-item-info"><div class="file-item-same">✓ ${r.file.name}</div><div style="font-size:10px;color:#3a5a3a">${oldPath}</div></div>`;
+      } else {
+        const oldPath = [r.file.currentCat, r.file.currentPerson, r.file.currentYear].filter(Boolean).join("/");
+        const header = document.createElement("div");
+        header.className = "file-item-header";
+        const cb = document.createElement("input");
+        cb.type = "checkbox"; cb.checked = true; cb.dataset.idx = String(idx);
+        const info = document.createElement("div");
+        info.className = "file-item-info";
+        const old = document.createElement("div");
+        old.className = "file-item-old";
+        old.textContent = oldPath + "/" + r.file.name;
+        info.appendChild(old);
+        header.appendChild(cb);
+        header.appendChild(info);
+        item.appendChild(header);
+        item.appendChild(makeCatSelect(r.newCat));
+        item.appendChild(makePersonSelect(r.newPerson));
+        const nameInput = document.createElement("input");
+        nameInput.type = "text"; nameInput.value = r.newName;
+        item.appendChild(nameInput);
+      }
+      list.appendChild(item);
+    });
+
+    list._results = results;
+    document.getElementById("reclassResults").style.display = "block";
+
+  } catch(e) {
+    document.getElementById("reclassError").style.display = "block";
+    document.getElementById("reclassErrorMsg").textContent = "⚠️ " + e.message;
+  }
+
+  this.disabled = false;
+});
+
+document.getElementById("btnApplyReclass").addEventListener("click", async function() {
+  const list = document.getElementById("reclassFileList");
+  const results = list._results;
+  const checked = [...document.querySelectorAll("#reclassFileList input[type=checkbox]:checked")];
+
+  if (checked.length === 0) { alert("Nessun file selezionato."); return; }
+
+  this.disabled = true;
+  this.textContent = `Applicando 0/${checked.length}…`;
+
+  try {
+    if (!accessToken) accessToken = await getAccessToken();
+    for (let i = 0; i < checked.length; i++) {
+      const idx = parseInt(checked[i].dataset.idx);
+      const r = results[idx];
+      const item = checked[i].closest(".file-item");
+      const selects = item.querySelectorAll("select");
+      const newCat = selects[0]?.value || r.newCat;
+      const newPerson = selects[1]?.value || r.newPerson;
+      const newName = (item.querySelector("input[type=text]")?.value.trim()) || r.newName;
+      const newYear = (newName.match(/^(\d{4})[-_]/) || [])[1] || String(new Date().getFullYear());
+      this.textContent = `Applicando ${i + 1}/${checked.length}…`;
+
+      const newCatFolderId = FOLDERS[newCat] || FOLDERS["Altro"];
+      const personFolderId = await getOrCreateSubfolder(accessToken, newCatFolderId, newPerson);
+      let yearFolderId;
+      if (TEMPORAL_CATEGORIES.has(newCat)) {
+        yearFolderId = await getOrCreateYearFolder(accessToken, personFolderId, newYear);
+      } else {
+        yearFolderId = personFolderId;
+      }
+
+      const params = r.file.parentId !== yearFolderId
+        ? `?addParents=${yearFolderId}&removeParents=${r.file.parentId}`
+        : "";
+      await fetch(`https://www.googleapis.com/drive/v3/files/${r.file.id}${params}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName }),
+      });
+
+      item.style.opacity = "0.4";
+    }
+    this.textContent = "✓ Fatto";
+  } catch(e) {
+    this.disabled = false;
+    this.textContent = "Applica selezionati";
+    document.getElementById("reclassError").style.display = "block";
+    document.getElementById("reclassErrorMsg").textContent = "⚠️ " + e.message;
+  }
+});
+
+// ── Theme toggle ──────────────────────────────────────────────────────────────
+
+(function() {
+  if (localStorage.getItem("archivio_theme") === "light") document.body.classList.add("light");
+  const btn = document.getElementById("btnTheme");
+  btn.textContent = document.body.classList.contains("light") ? "🌙" : "☀️";
+  btn.addEventListener("click", function() {
+    const isLight = document.body.classList.toggle("light");
+    localStorage.setItem("archivio_theme", isLight ? "light" : "dark");
+    this.textContent = isLight ? "🌙" : "☀️";
+  });
+})();
+
+document.getElementById("btnReclassReset").addEventListener("click", function() {
+  document.getElementById("reclassProgress").style.display = "none";
+  document.getElementById("reclassResults").style.display = "none";
+  document.getElementById("reclassError").style.display = "none";
+  document.getElementById("reclassFileList").innerHTML = "";
+  document.getElementById("btnStartReclass").disabled = false;
+  document.getElementById("btnApplyReclass").disabled = false;
+  document.getElementById("btnApplyReclass").textContent = "Applica selezionati";
+});
+
+</script>
 </body>
-
 </html>

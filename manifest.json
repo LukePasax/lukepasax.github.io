@@ -2,7 +2,7 @@
   "name": "Archivio Personale",
   "short_name": "Archivio",
   "description": "Archivia documenti su Google Drive con classificazione automatica",
-  "start_url": "/archivio-personale.html",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#0e0e0e",
   "theme_color": "#0e0e0e",
